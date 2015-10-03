@@ -1,6 +1,18 @@
 import os
 import os.path as io 
+import timeit
 import scipy.misc as image
+
+class Timer(object):
+    def __init__(self):
+        self.start_time=timeit.default_timer()
+
+    def stop(self):
+        self.end_time = timeit.default_timer()
+        self.training_time = (end_time - start_time)
+
+    def show(self):
+        print("Training time %d ",self.training_time)
 
 def get_files(path):
     all_in_dir=os.listdir(path)
@@ -13,6 +25,11 @@ def get_dirs(path):
     dirs= filter(lambda f: not is_file(f,path),all_in_dir)
     dirs.sort()
     return dirs
+
+def get_paths(dir_path):
+    files=get_files(dir_path)
+    files=["/" + f for f in files]
+    return append_path(dir_path,files)
 
 def is_file(f,path):
         return io.isfile(io.join(path,f))
