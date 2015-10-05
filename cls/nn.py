@@ -2,8 +2,7 @@ import load,logit
 import numpy as np
 import theano
 import theano.tensor as T
-import imp
-utils =imp.load_source("utils","/home/user/cf/conv_frames/utils.py")
+import ml_tools 
 
 class HiddenLayer(object):
     def __init__(self,input_data, n_in, n_out, W=None, b=None,
@@ -84,11 +83,12 @@ class MLP(object):
 
         self.input_data = input_data
 
-def build_model(dataset,learning_rate):
-    n_hidden=500
-    L1_reg=0.0 
-    L2_reg=0.0
-    symb_vars=logit.InputVariables()
+def build_model(dataset,model_params):
+    learning_rate=model_params['learning_rate']
+    n_hidden=model_params['n_hidden']
+    L1_reg=model_params['L1_reg']
+    L2_reg=model_params['L2_reg']
+    symb_vars=ml_tools.InputVariables()
     classifier = MLP(
         input_data=symb_vars.x,
         n_in=dataset.image_size,
@@ -121,8 +121,13 @@ def build_model(dataset,learning_rate):
     )
     return classifier,train_model
 
+def get_default_params(learning_rate=0.13):
+    params={'learning_rate': learning_rate,
+            'n_hidden':500,'L1_reg':0.0,'L2_reg':0.0}
+    return params
 
 if __name__ == "__main__":
     path="/home/user/cf/conv_frames/cls/images/"
     dataset=load.get_images(path)
-    cls=logit.learning_logit(dataset,build_model)
+    params=get_default_params()
+    cls=ml_tools.learning_iter(dataset,build_model,params)
