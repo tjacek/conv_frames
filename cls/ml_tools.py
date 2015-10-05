@@ -9,6 +9,15 @@ class InputVariables(object):
         self.x = T.matrix('x')
         self.y = T.lvector('y')
 
+class RandomNum(object):
+    def __init__(self):
+        self.rng = np.random.RandomState(123)
+
+    def uniform(self,n_in,n_out,dim):
+        bound=np.sqrt(6. / (n_in + n_out))
+        #dim=(n_in, n_out)
+        return self.rng.uniform(-bound,bound,dim)
+
 class TrainParams(object):
     def __init__(self,n_batches):
         self.patience = 5000  

@@ -9,21 +9,16 @@ class HiddenLayer(object):
                  activation=T.tanh):
  
         self.input_data = input_data
-        self.__init_rng()
+        self.rng=ml_tools.RandomNum()
         self.__init_W(n_in,n_out,W,activation)
         self.__init_b(n_out,b)
         self.__init_output(activation)
         self.params = [self.W, self.b]
-
-    def __init_rng(self,theano_rng=None):
-        self.rng = np.random.RandomState(123)
        
     def __init_W(self,n_in,n_out,W,activation):
         if W is None:
-            bound=np.sqrt(6. / (n_in + n_out))
-            init_value=self.rng.uniform(
-              low=-bound,high=bound,size=(n_in, n_out)
-            )
+            w_dim=(n_in,n_out)
+            init_value=self.rng.uniform(n_in,n_out,w_dim)
             W_values = np.asarray(
                 init_value,
                 dtype=theano.config.floatX
