@@ -58,6 +58,7 @@ def build_model(dataset,model_params):
 
     symb_vars=ml_tools.InputVariables()
     image_dim=dataset.image_shape
+    print(image_dim)
     input0_shape=(batch_size,1,image_dim[0],image_dim[1])
     layer0_input = symb_vars.x.reshape(input0_shape)
 
@@ -77,18 +78,18 @@ def build_model(dataset,model_params):
     )
 
     layer2_input = layer1.output.flatten(2)
-    print(nkerns)
+    print(nkerns[1] * (59*2 +1))
     layer2 = nn.HiddenLayer(
         input_data=layer2_input,
         n_in=nkerns[1] * (59*2 +1),
-        n_out=500,
+        n_out=1200,
         activation=T.tanh
     )
 
     layer3 = logit.LogisticRegression(input_data=layer2.output, 
-                           n_in=500, n_out=dataset.n_cats)
+                           n_in=1200, n_out=dataset.n_cats)
 
-    cost = layer3.negative_log_likelihood(symb_vars.y)
+    cost =layer3.negative_log_likelihood(symb_vars.y)
 
     test_model = theano.function(
         [symb_vars.x, symb_vars.y],
@@ -117,7 +118,8 @@ def get_default_params(learning_rate=0.13):
     return params
 
 if __name__ == '__main__':
-    path="/home/user/cf/conv_frames/cls/images/"
-    dataset=load.get_images(path)
+    path="/home/user/cf/"
+    in_path=path+"conv_frames/cls/images/"
+    out_path=path+"exp1/conv"
     params=get_default_params()
-    cls=ml_tools.learning_iter(dataset,build_model,params,n_epochs=100)
+    ml_tools.create_classifer(in_path,out_path,build_model,params)

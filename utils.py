@@ -1,7 +1,8 @@
 import os
 import os.path as io 
-import timeit
+import timeit,pickle
 import scipy.misc as image
+import load
 
 class Timer(object):
     def __init__(self):
@@ -9,10 +10,10 @@ class Timer(object):
 
     def stop(self):
         self.end_time = timeit.default_timer()
-        self.training_time = (end_time - start_time)
+        self.total_time = (self.end_time - self.start_time)
 
     def show(self):
-        print("Training time %d ",self.training_time)
+        print("Training time %d ",self.total_time)
 
 def get_files(path):
     all_in_dir=os.listdir(path)
@@ -37,6 +38,17 @@ def is_file(f,path):
 def make_dir(path):
     if(not os.path.isdir(path)):
 	os.system("mkdir "+path)
+
+def save_object(path,nn):
+    file_object = open(path,'wb')
+    pickle.dump(nn,file_object)
+    file_object.close()
+
+def read_object(path):
+    file_object = open(path,'r')
+    obj=pickle.load(file_object)  
+    file_object.close()
+    return obj
 
 def append_path(path,files):
     return map(lambda f: path+f,files)
