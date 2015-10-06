@@ -1,54 +1,28 @@
 require 'torch'
 require 'math'
 require 'image'
+package.path = package.path .. ";'/home/user/cf/conv_frames/preproc/?.lua'"
+require 'clean_action'
 
 function decompose_action(output,action)
   local nframes=action:size()[1]
+  local max=torch.max(action)
+  local min=get_min_nonzero(action)
   for i=1,nframes do
     local filename=output .. "_" .. tonumber(i) ..".png"
     local frame=action[i]
-    local scaled_frame=scale_frame(frame)
+
+    print(max)
+    print(min)
+    local scaled_frame=scale_frame(frame,min,max)
     image.save(filename, scaled_frame)
   end
 end
 
-function scale_frame(frame)
+function scale_frame(frame,min,max)
   frame=remove_zero(frame)
+  frame=standarize_depth(frame,min,max)
   return image.scale(frame, 40, 80)
-end
-
-function remove_zero(frame)
-  local min,max=find_extrema(frame)
-  return frame:sub(min[1],max[1],min[2],max[2])
-end
-
-function find_extrema(frame)
-  local dim=frame:size()
-  local min={dim[1]+1,dim[2]+1}
-  local max={0,0}
-  for x_i=1,dim[1] do
-    for y_i=1,dim[2] do
-      if nonzero(frame,x_i,y_i) then
-        if x_i<min[1] then
-          min[1]=x_i
-        end
-        if y_i<min[2] then
-          min[2]=y_i
-        end
-        if x_i>max[1] then
-          max[1]=x_i
-        end
-        if y_i>max[2] then
-          max[2]=y_i
-        end
-      end
-    end
-  end
-  return min,max
-end
-
-function nonzero(frame,x,y)
-  return not (frame[x][y]==0)
 end
 
 if table.getn(arg) > 1 then
