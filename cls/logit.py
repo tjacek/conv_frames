@@ -4,66 +4,76 @@ import theano
 import theano.tensor as T
 import ml_tools
 
-class LogisticRegression(object):
+class FlatImages(object):
+    def __init__(self):
+        self.X=T.matrix('x')
+        self.y=T.lvector('y')
 
-    def __init__(self, input_data, n_in, n_out):
-        self.__init_weights(n_in,n_out)
-        self.__init_bias(n_out)
+    def get_vars(self):
+        return [self.X,self.y]
 
-        self.p_y_given_x = T.nnet.softmax(T.dot(input_data, self.W) + self.b)
-        self.y_pred = T.argmax(self.p_y_given_x, axis=1)
-        self.params = [self.W, self.b]
-        self.input_data = input_data
+class LogitModel(object):
+    def __init__(self,W,b):
+        self.W=W
+        self.b=b
 
-    def __init_weights(self,n_in,n_out):
-        init_value=np.zeros((n_in, n_out),dtype=theano.config.floatX)
-        self.W = theano.shared(value=init_value,name='W',borrow=True)
+    def get_params(self):
+        return [self.W,self.b]
 
-    def __init_bias(self,n_out):
-        init_value=np.zeros((n_out,),dtype=theano.config.floatX)
-        self.b = theano.shared(value=init_value,name='b',borrow=True)
+class LogitClassifier(object):
+    def __init__(self,free_vars,model,train,test):
+        self.free_vars=free_vars
+        self.model=model
+        self.test=test
+        self.train=train
 
-    def negative_log_likelihood(self, y):
-        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
+def built_classifer(shape=(3200,20)):
+    free_vars=FlatImages()
+    model=create_model(shape)
+    train,test=create_cls_fun(free_vars,model)
+    return LogitClassifier(free_vars,model,train,test)
 
-    def errors(self, y):
-        if y.ndim != self.y_pred.ndim:
-            raise TypeError(
-                'y should have the same shape as self.y_pred',
-                ('y', y.type, 'y_pred', self.y_pred.type)
-            )
-        if y.dtype.startswith('int'):
-            return T.mean(T.neq(self.y_pred, y))
-        else:
-            raise NotImplementedError()
+def create_model(shape):
+    W=init_weights(shape[0],shape[1])
+    b=init_bias(shape[1])
+    return LogitModel(W,b)
 
-def build_model(dataset,model_params):
-    learning_rate=model_params['learning_rate']
-    symb_vars=ml_tools.InputVariables()
-    classifier = LogisticRegression(input_data=symb_vars.x, 
-                  n_in=dataset.image_size, n_out=dataset.n_cats)
-    cost = classifier.negative_log_likelihood(symb_vars.y)
+def init_weights(n_in,n_out):
+    init_value=ml_tools.get_zeros((n_in,n_out))
+    return theano.shared(value=init_value,name='W',borrow=True)
 
-    test_model = theano.function(
-        inputs=[symb_vars.x,symb_vars.y],
-        outputs=classifier.errors(symb_vars.y))
+def init_bias(n_out):
+    init_value=ml_tools.get_zeros((n_out,))
+    return theano.shared(value=init_value,name='b',borrow=True)
 
-    g_W = T.grad(cost=cost, wrt=classifier.W)
-    g_b = T.grad(cost=cost, wrt=classifier.b)
-    updates = [(classifier.W, classifier.W - learning_rate * g_W),
-               (classifier.b, classifier.b - learning_rate * g_b)]
+def create_cls_fun(free_vars,model):
+    learning_rate=0.15
+    py_x=get_px_y(free_vars,model)
+    loss=get_loss_function(free_vars,py_x)
+    input_vars=free_vars.get_vars()
+    g_W = T.grad(cost=loss, wrt=model.W)
+    g_b = T.grad(cost=loss, wrt=model.b)
+    update = [(model.W, model.W - learning_rate * g_W),
+               (model.b,model.b - learning_rate * g_b)]
+    train = theano.function(inputs=input_vars, 
+                                outputs=loss, updates=update, 
+                                allow_input_downcast=True)
+    y_pred = T.argmax(py_x, axis=1)
+    test=theano.function(inputs=[free_vars.X], outputs=y_pred, 
+            allow_input_downcast=True) 
+    return train,test
 
-    train_model = theano.function(
-        inputs=[symb_vars.x,symb_vars.y],
-        outputs=cost,
-        updates=updates)
-    return classifier,train_model
+def get_px_y(free_vars,model):    
+    equation=T.dot(free_vars.X, model.W) + model.b
+    return T.nnet.softmax(equation)
 
-def get_default_params(learning_rate=0.13):
-    return {'learning_rate': learning_rate}
+def get_loss_function(free_vars,py_x):
+    return T.mean(T.nnet.categorical_crossentropy(py_x,free_vars.y))
 
 if __name__ == "__main__":
     path="/home/user/cf/conv_frames/cls/images/"
     dataset=load.get_images(path)
-    params=get_default_params()
-    cls=ml_tools.learning_iter(dataset,build_model,params)
+    cls=built_classifer()
+    cls=ml_tools.learning_iter(dataset,cls)
+    #dataset=load.get_images(path)
+    #print(ml_tools.check_prediction(dataset,cls))
