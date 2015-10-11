@@ -32,13 +32,25 @@ def get_zeros(shape):
 def as_array(X):
     return np.asarray(X, dtype=theano.config.floatX)
 
-def learning_iter(dataset,make_model,model_params,
+def evaluate_cls(dataset_path,cls):
+    dataset=load.get_images(dataset_path)
+    cls=learning_iter(dataset,cls)
+    correct=check_prediction(dataset,cls)
+    print(correct)
+
+def create_classifer(in_path,out_path,cls):
+    dataset=load.get_images(in_path)
+    cls=learning_iter(dataset,cls)
+    utils.save_object(out_path,cls)
+    return cls
+
+def learning_iter(dataset,cls,
                   n_epochs=50,batch_size=1,flat=True):
 
     X_b,y_b=dataset.get_batches(batch_size,flat)
     n_train_batches=len(y_b)
     # build model
-    classifier,train_model,eval_model=make_model(dataset,model_params)
+    #classifier,train_model,eval_model=make_model(dataset,model_params)
     print '... training the model'
     #train_params=TrainParams()
     timer = utils.Timer()
@@ -47,31 +59,17 @@ def learning_iter(dataset,make_model,model_params,
         for batch_index in xrange(n_train_batches):
             x_i=X_b[batch_index]
             y_i=y_b[batch_index]
-            c.append(train_model(x_i,y_i))
+            c.append(cls.train(x_i,y_i))
 
         print 'Training epoch %d, cost ' % epoch, np.mean(c)
 
     timer.stop()
     print("Training time %d ",timer.total_time)
-    return classifier,eval_model
-
-def create_classifer(in_path,out_path,build_model,params):
-    dataset=load.get_images(in_path)
-    cls=learning_iter(dataset,build_model,params)
-    utils.save_object(out_path,cls)
     return cls
-
-def evaluate_cls(dataset_path,cls_path):
-    dataset=load.get_images(dataset_path)
-    cls=utils.read_object(cls_path)
-    correct=check_prediction(dataset,cls)
-    print(correct)
 
 def check_prediction(dataset,cls):
     X_b,y_b=dataset.get_batches(1)#.reshape((74,3200))
     y=[cls.test(x_i)[0] for x_i in X_b]
-    print(y)
-    print(dataset.y)
     pred=(y==dataset.y)
     pred.astype(int)
     return np.mean(pred)

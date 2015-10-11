@@ -71,9 +71,8 @@ def get_loss_function(free_vars,py_x):
     return T.mean(T.nnet.categorical_crossentropy(py_x,free_vars.y))
 
 if __name__ == "__main__":
-    path="/home/user/cf/conv_frames/cls/images/"
-    dataset=load.get_images(path)
+    dataset_path="/home/user/cf/conv_frames/cls/images/"
     cls=built_classifer()
-    cls=ml_tools.learning_iter(dataset,cls)
-    #dataset=load.get_images(path)
-    #print(ml_tools.check_prediction(dataset,cls))
+    out_path="/home/user/cf/exp1/logit"
+    #ml_tools.evaluate_cls(dataset_path,cls)
+    ml_tools.create_classifer(dataset_path,out_path,cls)
