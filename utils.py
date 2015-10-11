@@ -2,7 +2,6 @@ import os
 import os.path as io 
 import timeit,pickle
 import scipy.misc as image
-import load
 
 class Timer(object):
     def __init__(self):
@@ -32,6 +31,12 @@ def get_paths(dir_path):
     files=["/" + f for f in files]
     return append_path(dir_path,files)
 
+def read_file(path):
+    file_object = open(path,'r')
+    lines=file_object.readlines()  
+    file_object.close()
+    return lines
+
 def is_file(f,path):
         return io.isfile(io.join(path,f))
 
@@ -39,10 +44,18 @@ def make_dir(path):
     if(not os.path.isdir(path)):
 	os.system("mkdir "+path)
 
+def array_to_txt(array):
+    return reduce(lambda x,y:x+str(y),array,"")
+
 def save_object(path,nn):
     file_object = open(path,'wb')
     pickle.dump(nn,file_object)
     file_object.close()
+
+def save_string(path,string):
+    file_str = open(path,'w')
+    file_str.write(string)
+    file_str.close()
 
 def read_object(path):
     file_object = open(path,'r')

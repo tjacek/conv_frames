@@ -9,7 +9,13 @@ class Action(object):
         self.person=person
 	self.frames=frames
         self.seq=range(len(frames))
-        
+
+    def set_seq(self,cls_frames):
+        self.seq=[SYMBOLS[cat] for cat in cls_frames]
+
+    def flat_frames(self):
+        return [frame.reshape((1,frame.size)) for frame in self.frames]
+
     def __str__(self):
         cf="".join([str(cat) for cat in self.seq])
         cf+="$"+str(self.category)
