@@ -44,7 +44,19 @@ def parse_instance(raw_instance):
     person=int(raw[2])
     return Instance(seq,category,person)
 
+def split_dataset(path):
+    dataset=create_dataset(path)
+    train_path=path.replace(".seq","_train.seq")
+    test_path=path.replace(".seq","_test.seq")
+    insts=dataset.instances
+    train_insts=[inst for inst in insts if odd_person(inst)]
+    test_insts=[inst for inst in insts if not odd_person(inst)]
+    save_instances(train_path,Dataset(train_insts))
+    save_instances(test_path,Dataset(test_insts))
+
+def odd_person(instance):
+    return (instance.person % 2)==1
+
 if __name__ == "__main__":
     path="/home/user/cf/seqs/dataset.seq"
-    dataset=create_dataset(path)
-    save_instances(path.replace(".seq","_.seq"),dataset)
+    split_dataset(path)
