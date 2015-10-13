@@ -1,6 +1,6 @@
 import os
 import os.path as io 
-import timeit,pickle
+import timeit,pickle,re
 import scipy.misc as image
 
 class Timer(object):
@@ -71,3 +71,28 @@ def replace_sufix(sufix,files):
 
 def read_images(files):
     return map(lambda f:image.imread(f),files)
+
+def to_txt_file(path,array):
+    txt=array_to_txt(array)
+    save_string(path,txt)
+
+def get_zeros(n):
+    return [0 for i in range(n)]
+
+def to_csv_file(path,vectors):
+    file_csv = open(path,'w')
+    csv=""
+    for instance in vectors:
+        str_v=vector_to_str(instance)
+        str_v+='#'
+        str_v=str_v.replace(",#","\n")
+        csv+=str_v
+    file_csv.write(csv)
+    file_csv.close()
+
+def vector_to_str(vector):
+    str_vec=""
+    for vec in vector:
+        vec=round(vec, 2)
+        str_vec+=str(vec)+","
+    return str_vec#+"\n"

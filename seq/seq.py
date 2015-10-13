@@ -24,6 +24,11 @@ class Instance(object):
         self.category=category
         self.person=person 
 
+    def sub_seq(self):
+        indexes=range(len(self.seq)-1)
+        sub_seqs=[self.seq[i] +self.seq[i+1] for i in indexes]
+        return sub_seqs
+
     def __str__(self):
         cat=str(self.category)
         person=str(self.person)
