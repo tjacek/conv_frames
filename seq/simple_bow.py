@@ -14,11 +14,12 @@ class BOW(object):
         return self.indexes[word]
 
 def extract_bow(in_path):
-    out_path=in_path.replace(".seq",".csv")
+    out_path=in_path.replace(".seq",".lb")
     dataset=seq.create_dataset(in_path)
+    labels=dataset.get_labels()
     vectors,bow=create_vectors(dataset)
     vectors=standarize_vectors(vectors,bow)
-    utils.to_csv_file(out_path,vectors)
+    utils.to_labeled_file(out_path,vectors,labels)
 
 def create_vectors(dataset):
     bow=BOW()

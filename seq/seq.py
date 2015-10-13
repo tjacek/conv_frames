@@ -5,6 +5,9 @@ class Dataset(object):
     def __init__(self,instances):
         self.size=len(instances)
         self.instances=instances
+    
+    def get_labels(self):
+        return [inst.category for inst in self.instances]
 
     def get_instance(self,i):
         return self.instances[i]

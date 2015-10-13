@@ -80,19 +80,28 @@ def get_zeros(n):
     return [0 for i in range(n)]
 
 def to_csv_file(path,vectors):
-    file_csv = open(path,'w')
     csv=""
     for instance in vectors:
         str_v=vector_to_str(instance)
-        str_v+='#'
-        str_v=str_v.replace(",#","\n")
+        str_v+="\n"
         csv+=str_v
-    file_csv.write(csv)
-    file_csv.close()
+    save_string(path,csv)
+
+def to_labeled_file(path,vectors,labels):
+    lb=""
+    for instance,cat in zip(vectors,labels):
+        str_v=vector_to_str(instance)
+        str_v+="#"+str(cat)+"\n"
+        lb+=str_v
+    save_string(path,lb)
 
 def vector_to_str(vector):
     str_vec=""
-    for vec in vector:
+    size=len(vector)-1
+    for i,vec in enumerate(vector):
         vec=round(vec, 2)
-        str_vec+=str(vec)+","
+        if(i!=size):
+            str_vec+=str(vec)+","
+        else:
+            str_vec+=str(vec)
     return str_vec#+"\n"
