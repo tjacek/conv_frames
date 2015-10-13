@@ -35,9 +35,9 @@ def create_vectors(dataset):
 
 def standarize_vectors(vectors,bow):
     def standarize(vec):
-        diff=bow.size-len(vectors)
+        diff=bow.size-len(vec)
         if(diff>0):
-            vec+=uils.get_zero(diff)
+            vec+=utils.get_zeros(diff)
         norm_const=float(sum(vec))
         vec=[float(cord_i)/norm_const for cord_i in vec]
         return vec
