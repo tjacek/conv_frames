@@ -4,79 +4,21 @@ import theano
 import theano.tensor as T
 import ml_tools 
 
-class HiddenLayer(object):
-    def __init__(self,input_data, n_in, n_out, W=None, b=None,
-                 activation=T.tanh):
- 
-        self.input_data = input_data
-        self.rng=ml_tools.RandomNum()
-        self.__init_W(n_in,n_out,W,activation)
-        self.__init_b(n_out,b)
-        self.__init_output(activation)
-        self.params = [self.W, self.b]
-       
-    def __init_W(self,n_in,n_out,W,activation):
-        if W is None:
-            w_dim=(n_in,n_out)
-            init_value=self.rng.uniform(n_in,n_out,w_dim)
-            W_values = np.asarray(
-                init_value,
-                dtype=theano.config.floatX
-            )
-            if activation == theano.tensor.nnet.sigmoid:
-                W_values *= 4
+class MlpModel(object):
+    def __init__(self,hidden,logistic):
+        self.hidden=hidden
+        self.logistic=logistic
+        
+    def get_params(self):
+        return self.hidden + self.logistic
 
-            W = theano.shared(value=W_values, name='W', borrow=True)
-        self.W = W
-
-    def __init_b(self,n_out,b):
-        if b is None:
-            b_values = np.zeros((n_out,), dtype=theano.config.floatX)
-            b = theano.shared(value=b_values, name='b', borrow=True)
-        self.b = b
-
-    def __init_output(self,activation):
-        lin_output = T.dot(self.input_data, self.W) + self.b
-        self.output = (
-            lin_output if activation is None
-            else activation(lin_output)
-        )
-
-class MLP(object):
-    def __init__(self, input_data, n_in, n_hidden, n_out):
-        self.hiddenLayer = HiddenLayer(
-            input_data=input_data,
-            n_in=n_in,
-            n_out=n_hidden,
-            activation=T.tanh
-        )
-
-
-        self.logRegressionLayer = logit.LogisticRegression(
-            input_data=self.hiddenLayer.output,
-            n_in=n_hidden,
-            n_out=n_out
-        )
-
-        self.L1 = (
-            abs(self.hiddenLayer.W).sum()
-            + abs(self.logRegressionLayer.W).sum()
-        )
-
-        self.L2_sqr = (
-            (self.hiddenLayer.W ** 2).sum()
-            + (self.logRegressionLayer.W ** 2).sum()
-        )
-
-        self.negative_log_likelihood = (
-            self.logRegressionLayer.negative_log_likelihood
-        )
-
-        self.errors = self.logRegressionLayer.errors
-
-        self.params = self.hiddenLayer.params + self.logRegressionLayer.params
-
-        self.input_data = input_data
+def create_mlp_model(params):
+    n_in=params['n_in']
+    n_hidden=params['n_hidden']
+    n_out=params['n_out']
+    hidden=logit.create_layer()
+    logistic=logit.create_layer()
+    return MlpModel(hidden,logit)
 
 def build_model(dataset,model_params):
     learning_rate=model_params['learning_rate']
