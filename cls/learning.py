@@ -10,15 +10,6 @@ class InputVariables(object):
         self.x = T.matrix('x')
         self.y = T.lvector('y')
 
-class RandomNum(object):
-    def __init__(self):
-        self.rng = np.random.RandomState(123)
-
-    def uniform(self,n_in,n_out,dim):
-        bound=np.sqrt(6. / (n_in + n_out))
-        #dim=(n_in, n_out)
-        return self.rng.uniform(-bound,bound,dim)
-
 class TrainParams(object):
     def __init__(self,n_batches):
         self.patience = 5000  
@@ -29,9 +20,9 @@ class TrainParams(object):
 def as_array(X):
     return np.asarray(X, dtype=theano.config.floatX)
 
-def evaluate_cls(dataset_path,cls):
+def evaluate_cls(dataset_path,cls_path):
     dataset=load.get_images(dataset_path)
-    cls=learning_iter(dataset,cls)
+    cls=utils.read_object(cls_path) #learning_iter(dataset,cls)
     correct=check_prediction(dataset,cls)
     print(correct)
 
@@ -43,9 +34,10 @@ def create_classifer(in_path,out_path,built_classifer):
     return cls
 
 def learning_iter(dataset,cls,
-                  n_epochs=50,batch_size=1,flat=True):
+                  n_epochs=50,batch_size=40,flat=True):
 
-    X_b,y_b=dataset.get_batches(batch_size,flat)
+    #X_b,y_b=dataset.get_batches(batch_size,flat)
+    X_b,y_b=dataset.single_batch()
     n_train_batches=len(y_b)
     # build model
     #classifier,train_model,eval_model=make_model(dataset,model_params)
@@ -67,8 +59,11 @@ def learning_iter(dataset,cls,
 
 def check_prediction(dataset,cls):
     X_b,y_b=dataset.get_batches(1)#.reshape((74,3200))
-    print(X_b[0].shape)
+    #X_b=np.reshape(X_b,(172,3200))
+    print(X_b.shape)
     y=[cls.test(x_i)[0] for x_i in X_b]
+    print(y)
+    print(dataset.y)
     pred=(y==dataset.y)
     pred.astype(int)
     return np.mean(pred)

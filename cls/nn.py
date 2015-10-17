@@ -23,8 +23,9 @@ def create_mlp_model(hyper_params):
     n_in=hyper_params['n_in']
     n_hidden=hyper_params['n_hidden']
     n_out=hyper_params['n_out']
-    hidden=ml_tools.create_layer((n_in,n_hidden))
-    logistic=ml_tools.create_layer((n_hidden,n_out))
+    rand=ml_tools.RandomNum()
+    hidden=ml_tools.create_layer((n_in,n_hidden),rand)
+    logistic=ml_tools.create_layer((n_hidden,n_out),rand)
     return MlpModel(hidden,logistic)
 
 def create_nn_fun(free_vars,model,hyper_params):
@@ -33,6 +34,7 @@ def create_nn_fun(free_vars,model,hyper_params):
     loss=get_loss_function(free_vars,py_x)
     input_vars=free_vars.get_vars()
     params=model.get_params()
+    print(len(params))
     update=sgd(loss, params, learning_rate)
     train = theano.function(inputs=input_vars, 
                                 outputs=loss, updates=update, 
@@ -60,13 +62,14 @@ def sgd(loss, params, learning_rate=0.05):
     ]
     return updates
 
-def get_hyper_params(learning_rate=0.15):
+def get_hyper_params(learning_rate=0.05):
     params={'learning_rate': learning_rate,
-            'n_in':3200,'n_out':7,'n_hidden':500,}
+            'n_in':3200,'n_out':7,'n_hidden':800}
     return params
 
 if __name__ == "__main__":
     dataset_path="/home/user/cf/conv_frames/cls/images/"
     dataset=load.get_images(dataset_path)
     out_path="/home/user/cf/exp1/nn"
-    learning.create_classifer(dataset_path,out_path,built_nn_cls)
+    cls=learning.create_classifer(dataset_path,out_path,built_nn_cls)
+    learning.evaluate_cls(dataset_path,out_path)

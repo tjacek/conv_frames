@@ -11,6 +11,9 @@ class LabeledImages(object):
         self.image_shape=self.X[0].shape
         self.image_size=self.image_shape[0]*self.image_shape[1]
 
+    def shape(self):
+        return (self.image_size,self.n_cats)
+
     def get_flatten_images(self):
         flat_images=[x_i.flatten() for x_i in self.X]
         return np.array(flat_images)
@@ -21,21 +24,29 @@ class LabeledImages(object):
             n_batches+=1
         return n_batches
 
-    def get_batches(self,batch_size):
+    def get_batches(self,batch_size,flat=True):
         n_batches=self.get_number_of_batches(batch_size)
         iter_batches=range(n_batches)
-        flat_x=self.get_flatten_images()
-        X_b=[get_batch(i,flat_x,batch_size) for i in iter_batches]
+        if(flat):
+            x_full=self.get_flatten_images()
+        else:
+            x_full=self.X
+        X_b=[get_batch(i,x_full,batch_size) for i in iter_batches]
         X_b=np.array(X_b)
         y_b=[get_batch(i,self.y,batch_size) for i in iter_batches]
         y_b=np.array(y_b)
         return X_b,y_b
+
+    def single_batch(self):
+        single_batch_size=len(self.y)
+        return self.get_batches(single_batch_size)
 
 def get_batch(i,full_data,batch_size):
     return full_data[i * batch_size: (i+1) * batch_size]
 
 def get_images(path):
     cat_dirs=utils.get_dirs(path)
+    print(cat_dirs)
     n_cat=len(cat_dirs)
     images=[]
     labels=[]
