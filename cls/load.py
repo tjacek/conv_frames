@@ -37,9 +37,9 @@ class LabeledImages(object):
         y_b=np.array(y_b)
         return X_b,y_b
 
-    def single_batch(self):
+    def single_batch(self,flat=True):
         single_batch_size=len(self.y)
-        return self.get_batches(single_batch_size)
+        return self.get_batches(single_batch_size,flat)
 
 def get_batch(i,full_data,batch_size):
     return full_data[i * batch_size: (i+1) * batch_size]

@@ -1,125 +1,114 @@
-import load,ml_tools,nn,logit
+import load,ml_tools,nn,learning
 import numpy as np
 import theano
 import theano.tensor as T
-from theano.tensor.signal import downsample
-from theano.tensor.nnet import conv
+from theano.tensor.nnet.conv import conv2d
+from theano.tensor.signal.downsample import max_pool_2d
 
-class LeNetConvPoolLayer(object):
+class ConvModel(object):
+    def __init__(self,layers,pyx):
+        self.layers=layers
+        self.pyx=pyx
 
-    def __init__(self, input_data, filter_shape, image_shape, poolsize=(2, 2)):
+    def get_params(self):
+        return [layer.w for layer in self.layers]
 
-        assert image_shape[1] == filter_shape[1]
-        self.input_data = input_data
-        self.rng=ml_tools.RandomNum()
-        fan_in = np.prod(filter_shape[1:])
-        fan_out = (filter_shape[0] * np.prod(filter_shape[2:]) /
-                   np.prod(poolsize))
+class ConvLayer(object):
+    def __init__(self,layer,w):
+        self.layer=layer
+        self.w=w
 
-        self.__init_W(fan_in,fan_out,filter_shape)
-        self.__init_b(filter_shape)
-        self.__init_output(filter_shape,image_shape,poolsize)
-        self.params = [self.W, self.b]
+def built_conv_cls(shape=(3200,20)):
+    hyper_params=get_hyper_params()
+    free_vars=ml_tools.FlatImages()
+    model= create_conv_model(free_vars,hyper_params)
+    train,test=create_conv_fun(free_vars,model,hyper_params)
+    return ml_tools.Classifier(free_vars,model,train,test)
 
-    def __init_W(self,fan_in,fan_out,filter_shape):
-        init_value=self.rng.uniform(fan_in,fan_out,filter_shape)
-        self.W = theano.shared(
-            np.asarray(
-                init_value,
-                dtype=theano.config.floatX
-            ),
-            borrow=True
-        )
+def create_conv_model(free_vars,hyper_params):
+    kern_params=hyper_params['kern_params']
+    l1=make_conv_layer(free_vars.X,kern_params[0],first=True)
+    l2=make_conv_layer(l1,kern_params[1])
+    l3=make_conv_layer(l2,kern_params[2],flat=True)
+    l4,pyx=get_last_layer(l3,(kern_params[3],kern_params[4]),0.0)
+    layers=[l1,l2,l3,l4]
+    return ConvModel(layers,pyx) 
 
-    def __init_b(self,filter_shape):
-        b_values = np.zeros((filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+def make_conv_layer(in_data,w_shape,p_drop_conv=0.0,
+                    first=False,flat=False):
+    w = ml_tools.init_weights(w_shape)
+    if(first):
+        la = rectify(conv2d(in_data, w, border_mode='full'))
+    else:
+        la = rectify(conv2d(in_data, w2))
+    l = max_pool_2d(la, (2, 2))
+    if(flat):
+        l = T.flatten(lb, outdim=2)
+    layer=dropout(l, p_drop_conv) 
+    return ConvLayer(layer,w)
 
-    def __init_output(self,filter_shape,image_shape,poolsize):
-        conv_out = conv.conv2d(
-            input=self.input_data,
-            filters=self.W,
-            filter_shape=filter_shape,
-            image_shape=image_shape
-        )
+def get_last_layer(l3,w_shape,p_drop_conv=0.0):
+    w = ml_tools.init_weights(w_shape[0])
+    l4 = rectify(T.dot(l3, w))
+    l4 = dropout(l4, p_drop_hidden)
+    
+    pyx = softmax(T.dot(l4, w_shape[1]))
+    return l4,pyx
 
-        pooled_out = downsample.max_pool_2d(
-            input=conv_out,
-            ds=poolsize,
-            ignore_border=True
-        )
+def create_conv_fun(free_vars,model,hyper_params):
+    learning_rate=hyper_params['learning_rate']
+    py_x=model.pyx
+    loss=get_loss_function(free_vars,py_x)
+    input_vars=free_vars.get_vars()
+    params=model.get_params()
+    update=RMSprop(loss, params, learning_rate)
+    train = theano.function(inputs=input_vars, 
+                                outputs=loss, updates=update, 
+                                allow_input_downcast=True)
+    y_pred = T.argmax(py_x, axis=1)
+    test=theano.function(inputs=[free_vars.X], outputs=y_pred, 
+            allow_input_downcast=True) 
+    return train,test
 
-        self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+def RMSprop(cost, params, lr=0.001, rho=0.9, epsilon=1e-6):
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for p, g in zip(params, grads):
+        acc = theano.shared(p.get_value() * 0.)
+        acc_new = rho * acc + (1 - rho) * g ** 2
+        gradient_scaling = T.sqrt(acc_new + epsilon)
+        g = g / gradient_scaling
+        updates.append((acc, acc_new))
+        updates.append((p, p - lr * g))
+    return updates
 
-def build_model(dataset,model_params):
-    batch_size=model_params['batch_size']
-    learning_rate=model_params['learning_rate']
-    nkerns=model_params['nkerns']
+def get_loss_function(free_vars,py_x):
+    return T.mean(T.nnet.categorical_crossentropy(py_x,free_vars.y))
 
-    symb_vars=ml_tools.InputVariables()
-    image_dim=dataset.image_shape
-    print(image_dim)
-    input0_shape=(batch_size,1,image_dim[0],image_dim[1])
-    layer0_input = symb_vars.x.reshape(input0_shape)
+def rectify(X):
+    return T.maximum(X, 0.)
 
-    layer0 = LeNetConvPoolLayer(
-        input_data=layer0_input,
-        image_shape=input0_shape,
-        filter_shape=(nkerns[0], 1, 5, 5),
-        poolsize=(2, 2)
-    )
+def dropout(X, p=0.):
+    if p > 0:
+        retain_prob = 1 - p
+        X *= srng.binomial(X.shape, p=retain_prob, dtype=theano.config.floatX)
+        X /= retain_prob
+    return X
 
-    input1_shape=(batch_size,nkerns[0],38, 18)
-    layer1 = LeNetConvPoolLayer(
-        input_data=layer0.output,
-        image_shape=input1_shape,
-        filter_shape=(nkerns[1], nkerns[0], 5, 5),
-        poolsize=(2, 2)
-    )
+def softmax(X):
+    e_x = T.exp(X - X.max(axis=1).dimshuffle(0, 'x'))
+    return e_x / e_x.sum(axis=1).dimshuffle(0, 'x')
 
-    layer2_input = layer1.output.flatten(2)
-    print(nkerns[1] * (59*2 +1))
-    layer2 = nn.HiddenLayer(
-        input_data=layer2_input,
-        n_in=nkerns[1] * (59*2 +1),
-        n_out=1200,
-        activation=T.tanh
-    )
-
-    layer3 = logit.LogisticRegression(input_data=layer2.output, 
-                           n_in=1200, n_out=dataset.n_cats)
-
-    cost =layer3.negative_log_likelihood(symb_vars.y)
-
-    test_model = theano.function(
-        [symb_vars.x, symb_vars.y],
-        layer3.errors(symb_vars.y),
-    )
-
-    params = layer3.params + layer2.params + layer1.params + layer0.params 
-    grads = T.grad(cost, params)
-
-    updates = [
-        (param_i, param_i - learning_rate * grad_i)
-        for param_i, grad_i in zip(params, grads)
-    ]
-
-    train_model = theano.function(
-        [symb_vars.x, symb_vars.y],
-        cost,
-        updates=updates
-    )
-    return layer3,train_model
-
-def get_default_params(learning_rate=0.13):
+def get_hyper_params(learning_rate=0.13):
+    kern_params=[(32, 1, 3, 3),(64, 32, 3, 3),(128, 64, 3, 3),
+                 (128 * 3 * 3, 625),(625, 10)]
     params={'learning_rate': learning_rate,
-            'nkerns':[20, 50],
-            'batch_size':1}
+            'kern_params':kern_params}
     return params
 
 if __name__ == '__main__':
-    path="/home/user/cf/"
-    in_path=path+"conv_frames/cls/images/"
-    out_path=path+"exp1/conv"
-    params=get_default_params()
-    ml_tools.create_classifer(in_path,out_path,build_model,params)
+    dataset_path="/home/user/cf/conv_frames/cls/images/"
+    dataset=load.get_images(dataset_path)
+    out_path="/home/user/cf/exp1/nn"
+    cls=learning.create_classifer(dataset_path,out_path,built_conv_cls)
+    learning.evaluate_cls(dataset_path,out_path,flat=False)

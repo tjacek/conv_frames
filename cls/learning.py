@@ -37,7 +37,7 @@ def learning_iter(dataset,cls,
                   n_epochs=50,batch_size=40,flat=True):
 
     #X_b,y_b=dataset.get_batches(batch_size,flat)
-    X_b,y_b=dataset.single_batch()
+    X_b,y_b=dataset.single_batch(flat)
     n_train_batches=len(y_b)
     # build model
     #classifier,train_model,eval_model=make_model(dataset,model_params)
