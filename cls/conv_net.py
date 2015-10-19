@@ -20,7 +20,7 @@ class ConvLayer(object):
 
 def built_conv_cls(shape=(3200,20)):
     hyper_params=get_hyper_params()
-    free_vars=ml_tools.FlatImages()
+    free_vars=ml_tools.SquareImages()
     model= create_conv_model(free_vars,hyper_params)
     train,test=create_conv_fun(free_vars,model,hyper_params)
     return ml_tools.Classifier(free_vars,model,train,test)
@@ -28,32 +28,33 @@ def built_conv_cls(shape=(3200,20)):
 def create_conv_model(free_vars,hyper_params):
     kern_params=hyper_params['kern_params']
     l1=make_conv_layer(free_vars.X,kern_params[0],first=True)
-    l2=make_conv_layer(l1,kern_params[1])
-    l3=make_conv_layer(l2,kern_params[2],flat=True)
-    l4,pyx=get_last_layer(l3,(kern_params[3],kern_params[4]),0.0)
+    l2=make_conv_layer(l1.layer,kern_params[1])
+    l3=make_conv_layer(l2.layer,kern_params[2],flat=True)
+    l4,pyx=get_last_layer(l3.layer,(kern_params[3],kern_params[4]),0.0)
     layers=[l1,l2,l3,l4]
     return ConvModel(layers,pyx) 
 
 def make_conv_layer(in_data,w_shape,p_drop_conv=0.0,
                     first=False,flat=False):
-    w = ml_tools.init_weights(w_shape)
+    w = ml_tools.init_kernels(w_shape)
     if(first):
         la = rectify(conv2d(in_data, w, border_mode='full'))
     else:
-        la = rectify(conv2d(in_data, w2))
+        la = rectify(conv2d(in_data, w))
     l = max_pool_2d(la, (2, 2))
     if(flat):
-        l = T.flatten(lb, outdim=2)
+        l = T.flatten(l, outdim=2)
     layer=dropout(l, p_drop_conv) 
     return ConvLayer(layer,w)
 
-def get_last_layer(l3,w_shape,p_drop_conv=0.0):
-    w = ml_tools.init_weights(w_shape[0])
+def get_last_layer(l3,w_shape,p_drop_hidden=0.0):
+    w = ml_tools.init_kernels(w_shape[0])
     l4 = rectify(T.dot(l3, w))
     l4 = dropout(l4, p_drop_hidden)
-    
-    pyx = softmax(T.dot(l4, w_shape[1]))
-    return l4,pyx
+    w_0 = ml_tools.init_kernels(w_shape[1])
+    pyx = softmax(T.dot(l4, w_0))
+    layer_4=ConvLayer(l4,w)
+    return layer_4,pyx
 
 def create_conv_fun(free_vars,model,hyper_params):
     learning_rate=hyper_params['learning_rate']
@@ -101,7 +102,7 @@ def softmax(X):
 
 def get_hyper_params(learning_rate=0.13):
     kern_params=[(32, 1, 3, 3),(64, 32, 3, 3),(128, 64, 3, 3),
-                 (128 * 3 * 3, 625),(625, 10)]
+                 (128 * 6 * 6, 625),(625, 7)]
     params={'learning_rate': learning_rate,
             'kern_params':kern_params}
     return params
@@ -110,5 +111,5 @@ if __name__ == '__main__':
     dataset_path="/home/user/cf/conv_frames/cls/images/"
     dataset=load.get_images(dataset_path)
     out_path="/home/user/cf/exp1/nn"
-    cls=learning.create_classifer(dataset_path,out_path,built_conv_cls)
+    cls=learning.create_classifer(dataset_path,out_path,built_conv_cls,flat=False)
     learning.evaluate_cls(dataset_path,out_path,flat=False)
