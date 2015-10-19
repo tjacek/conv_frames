@@ -6,17 +6,33 @@ from theano.tensor.nnet.conv import conv2d
 from theano.tensor.signal.downsample import max_pool_2d
 
 class ConvModel(object):
-    def __init__(self,layers,pyx):
-        self.layers=layers
-        self.pyx=pyx
+    def __init__(self,conv_layers,last_layer):
+        self.conv_layers=conv_layers
+        self.last_layer=last_layer
 
     def get_params(self):
-        return [layer.w for layer in self.layers]
+        conv_params=[layer.w for layer in self.conv_layers]
+        ll_params=self.last_layer.get_params()
+        return conv_params + ll_params
+ 
+    def pyx(self):
+        return self.last_layer.out_layer
 
 class ConvLayer(object):
     def __init__(self,layer,w):
         self.layer=layer
         self.w=w
+
+class LastLayer(object):
+    def __init__(self,hidden_layer,w_h,
+                      out_layer,w_o):
+        self.hidden_layer=hidden_layer
+        self.w_h=w_h
+        self.out_layer=out_layer
+        self.w_o=w_o
+
+    def get_params(self):
+        return [self.w_h,self.w_o]
 
 def built_conv_cls(shape=(3200,20)):
     hyper_params=get_hyper_params()
@@ -30,9 +46,10 @@ def create_conv_model(free_vars,hyper_params):
     l1=make_conv_layer(free_vars.X,kern_params[0],first=True)
     l2=make_conv_layer(l1.layer,kern_params[1])
     l3=make_conv_layer(l2.layer,kern_params[2],flat=True)
-    l4,pyx=get_last_layer(l3.layer,(kern_params[3],kern_params[4]),0.0)
-    layers=[l1,l2,l3,l4]
-    return ConvModel(layers,pyx) 
+    ll_shape=(kern_params[3],kern_params[4])
+    last_layer=make_last_layer(l3.layer,ll_shape,0.0)
+    layers=[l1,l2,l3]
+    return ConvModel(layers,last_layer) 
 
 def make_conv_layer(in_data,w_shape,p_drop_conv=0.0,
                     first=False,flat=False):
@@ -47,22 +64,22 @@ def make_conv_layer(in_data,w_shape,p_drop_conv=0.0,
     layer=dropout(l, p_drop_conv) 
     return ConvLayer(layer,w)
 
-def get_last_layer(l3,w_shape,p_drop_hidden=0.0):
-    w = ml_tools.init_kernels(w_shape[0])
-    l4 = rectify(T.dot(l3, w))
-    l4 = dropout(l4, p_drop_hidden)
-    w_0 = ml_tools.init_kernels(w_shape[1])
-    pyx = softmax(T.dot(l4, w_0))
-    layer_4=ConvLayer(l4,w)
-    return layer_4,pyx
+def make_last_layer(l3,w_shape,p_drop_hidden=0.0):
+    w_h = ml_tools.init_kernels(w_shape[0])
+    hidden_layer = rectify(T.dot(l3, w_h))
+    l4 = dropout(hidden_layer, p_drop_hidden)
+    w_o = ml_tools.init_kernels(w_shape[1])
+    out_layer = softmax(T.dot(l4, w_o))
+    last_layer=LastLayer(hidden_layer,w_h,out_layer,w_o)
+    return last_layer
 
 def create_conv_fun(free_vars,model,hyper_params):
     learning_rate=hyper_params['learning_rate']
-    py_x=model.pyx
+    py_x=model.pyx()
     loss=get_loss_function(free_vars,py_x)
     input_vars=free_vars.get_vars()
     params=model.get_params()
-    update=RMSprop(loss, params, learning_rate)
+    update=ml_tools.sgd(loss, params, learning_rate)
     train = theano.function(inputs=input_vars, 
                                 outputs=loss, updates=update, 
                                 allow_input_downcast=True)
@@ -100,9 +117,13 @@ def softmax(X):
     e_x = T.exp(X - X.max(axis=1).dimshuffle(0, 'x'))
     return e_x / e_x.sum(axis=1).dimshuffle(0, 'x')
 
-def get_hyper_params(learning_rate=0.13):
-    kern_params=[(32, 1, 3, 3),(64, 32, 3, 3),(128, 64, 3, 3),
-                 (128 * 6 * 6, 625),(625, 7)]
+def get_hyper_params(learning_rate=0.10):
+    kern_one=8#32
+    kern_two=12#64
+    kern_third=16#128
+    n_hidden=400
+    kern_params=[(kern_one, 1, 3, 3),(kern_two, kern_one, 3, 3),(kern_third, kern_two, 3, 3),
+                 (kern_third * 6 * 6, n_hidden),(n_hidden, 7)]
     params={'learning_rate': learning_rate,
             'kern_params':kern_params}
     return params
@@ -110,6 +131,6 @@ def get_hyper_params(learning_rate=0.13):
 if __name__ == '__main__':
     dataset_path="/home/user/cf/conv_frames/cls/images/"
     dataset=load.get_images(dataset_path)
-    out_path="/home/user/cf/exp1/nn"
+    out_path="/home/user/cf/exp1/conv_net"
     cls=learning.create_classifer(dataset_path,out_path,built_conv_cls,flat=False)
     learning.evaluate_cls(dataset_path,out_path,flat=False)
