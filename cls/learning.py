@@ -20,27 +20,28 @@ class TrainParams(object):
 def as_array(X):
     return np.asarray(X, dtype=theano.config.floatX)
 
-def evaluate_cls(dataset_path,cls_path):
+def evaluate_cls(dataset_path,cls_path,flat=True):
     dataset=load.get_images(dataset_path)
     cls=utils.read_object(cls_path) #learning_iter(dataset,cls)
-    correct=check_prediction(dataset,cls)
+    correct=check_prediction(dataset,cls,flat)
     print(correct)
 
-def create_classifer(in_path,out_path,built_classifer):
+def create_classifer(in_path,out_path,built_classifer,flat=True):
     dataset=load.get_images(in_path)
     cls=built_classifer(dataset.shape())
-    cls=learning_iter(dataset,cls)
+    print(flat)
+    if(flat):
+        cls=learning_iter(dataset,cls)
+    else:
+        cls=learning_conv(dataset,cls)
     utils.save_object(out_path,cls)
     return cls
 
 def learning_iter(dataset,cls,
-                  n_epochs=50,batch_size=40,flat=True):
-
-    #X_b,y_b=dataset.get_batches(batch_size,flat)
-    X_b,y_b=dataset.single_batch(flat)
+                  n_epochs=400,batch_size=40):
+    X_b,y_b=dataset.single_batch(True)
     n_train_batches=len(y_b)
     # build model
-    #classifier,train_model,eval_model=make_model(dataset,model_params)
     print '... training the model'
     #train_params=TrainParams()
     timer = utils.Timer()
@@ -57,11 +58,31 @@ def learning_iter(dataset,cls,
     print("Training time %d ",timer.total_time)
     return cls
 
-def check_prediction(dataset,cls):
-    X_b,y_b=dataset.get_batches(1)#.reshape((74,3200))
-    #X_b=np.reshape(X_b,(172,3200))
+def learning_conv(dataset,cls,
+                  n_epochs=1000,batch_size=40):
+    X_b,y_b=dataset.square_images()
+    n_train_batches=len(y_b)
+    # build model
+    print '... training the model'
+    timer = utils.Timer()
+    for epoch in xrange(n_epochs):
+        c = []
+        c.append(cls.train(X_b,y_b))
+        print 'Training epoch %d, cost ' % epoch, np.mean(c)
+
+    timer.stop()
+    print("Training time %d ",timer.total_time)
+    return cls
+
+def check_prediction(dataset,cls,flat=True):
+    if(flat):
+        X_b,y_b=dataset.get_batches(1)
+        y=[cls.test(x_i)[0] for x_i in X_b]
+    else:
+        X_b,y_b=dataset.square_images()
+        y=cls.test(X_b)
     print(X_b.shape)
-    y=[cls.test(x_i)[0] for x_i in X_b]
+
     print(y)
     print(dataset.y)
     pred=(y==dataset.y)
