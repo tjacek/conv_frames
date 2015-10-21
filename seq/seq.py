@@ -21,6 +21,10 @@ class Dataset(object):
     def get_person(self,i):
         return self.instances[i].person
 
+    def show(self):
+        for inst in self.instances:
+            print(inst)
+
 class Instance(object):
     def __init__(self,seq,category,person):
         self.seq=seq
@@ -35,7 +39,7 @@ class Instance(object):
     def __str__(self):
         cat=str(self.category)
         person=str(self.person)
-        return str(self.seq) + "$" + cat +"$" + person
+        return str(self.seq) + "$" + cat +"$" + person+"\n"
 
 def create_dataset(path):
     lines=utils.read_file(path)
@@ -43,6 +47,7 @@ def create_dataset(path):
     return Dataset(instances)
 
 def save_instances(out_path,dataset):
+    dataset.show()
     utils.to_txt_file(out_path,dataset.instances)
     
 def parse_instance(raw_instance):
