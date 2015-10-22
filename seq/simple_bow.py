@@ -56,6 +56,22 @@ def create_vectors(dataset,bow):
         vectors.append(vector)
     return vectors
 
+def splited_bow(train_path,test_path):
+    train=seq.create_dataset(train_path)
+    test=seq.create_dataset(test_path)
+    bow=create_dict(train.instances +test.instances)
+    train_feats=create_vectors(train,bow)
+    test_feats=create_vectors(test,bow)
+    train_path=utils.change_postfix(train_path)
+    utils.to_labeled_file(train_path,train_feats,train.get_labels())
+    test_path=utils.change_postfix(test_path)
+    utils.to_labeled_file(test_path,test_feats,test.get_labels())
+
+
 if __name__ == "__main__":
-    in_path="/home/user/cf/seqs/dataset_test.seq"
-    extract_bow(in_path)
+    path="/home/user/cf/seqs/dataset"
+    train_path=path+"_train.seq"
+    test_path=path+"_test.seq"
+    splited_bow(train_path,test_path)
+   #in_path="/home/user/cf/seqs/dataset_test.seq"
+   #extract_bow(in_path)
