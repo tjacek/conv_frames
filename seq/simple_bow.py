@@ -30,12 +30,20 @@ def get_unlabeled_vectors(in_path,compute_features,suffix=".csv"):
     utils.to_csv_file(out_path,vectors,labels)
 
 def compute_bow(dataset):
+    bow=create_dict(dataset.instances)
     vectors,bow=create_vectors(dataset)
-    vectors=standarize_vectors(vectors,bow)
+    if(get_bow):
+        return vectors,bow
     return vectors
 
-def create_vectors(dataset):
+def create_dict(instances):
     bow=BOW()
+    for instance in instances:
+        sub_seqs=instance.sub_seq()
+        sub_seqs=[bow.get_index(word) for word in sub_seqs]
+    return bow
+
+def create_vectors(dataset,bow):
     vectors=[]
     for instance in dataset.instances:
         sub_seqs=instance.sub_seq()
@@ -43,19 +51,11 @@ def create_vectors(dataset):
         vector=utils.get_zeros(bow.size)
         for sub_seq in sub_seqs:
             vector[sub_seq]+=1
+        norm_const=float(sum(vector))
+        vector=[float(cord_i)/norm_const for cord_i in vector]
         vectors.append(vector)
-    return vectors,bow
-
-def standarize_vectors(vectors,bow):
-    def standarize(vec):
-        diff=bow.size-len(vec)
-        if(diff>0):
-            vec+=utils.get_zeros(diff)
-        norm_const=float(sum(vec))
-        vec=[float(cord_i)/norm_const for cord_i in vec]
-        return vec
-    return map(standarize,vectors)
+    return vectors
 
 if __name__ == "__main__":
-    in_path="/home/user/cf/seqs/dataset.seq"
+    in_path="/home/user/cf/seqs/dataset_test.seq"
     extract_bow(in_path)
