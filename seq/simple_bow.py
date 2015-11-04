@@ -31,9 +31,7 @@ def get_unlabeled_vectors(in_path,compute_features,suffix=".csv"):
 
 def compute_bow(dataset):
     bow=create_dict(dataset.instances)
-    vectors,bow=create_vectors(dataset)
-    if(get_bow):
-        return vectors,bow
+    vectors=create_vectors(dataset,bow)
     return vectors
 
 def create_dict(instances):
@@ -56,17 +54,42 @@ def create_vectors(dataset,bow):
         vectors.append(vector)
     return vectors
 
+def get_idf(vectors):
+    d=float(len(vectors))
+    size=len(vectors[0])
+    vectors=np.array(vectors)
+    idf=[map(binarize,vectors[:,i])  for i in range(size)]
+    idf=[sum(vec) for vec in idf]
+    idf=[np.log(d/ dt) for dt in idf]
+    return idf
+
+def td_idf(vectors):
+    idf=get_idf(vectors)
+    new_vectors=[z*vectors[:,i] for i,z in enumerate(idf)]]
+    return np.array(new_vectors)    
+
+def binarize(x):
+    if(x==0):
+        return 0.0
+    else:
+        return 1.0
+
 def splited_bow(train_path,test_path):
+    train,test=to_bow(train_path,test_path)
+    train_path=utils.change_postfix(train_path)
+    utils.to_labeled_file(train_path,train[0],train[1])
+    test_path=utils.change_postfix(test_path)
+    utils.to_labeled_file(test_path,test[0],test[1])
+
+def to_bow(train_path,test_path):
     train=seq.create_dataset(train_path)
     test=seq.create_dataset(test_path)
     bow=create_dict(train.instances +test.instances)
     train_feats=create_vectors(train,bow)
     test_feats=create_vectors(test,bow)
-    train_path=utils.change_postfix(train_path)
-    utils.to_labeled_file(train_path,train_feats,train.get_labels())
-    test_path=utils.change_postfix(test_path)
-    utils.to_labeled_file(test_path,test_feats,test.get_labels())
-
+    train_data=(train_feats,train.get_labels())
+    test_data=(test_feats,test.get_labels())
+    return train_data,test_data
 
 if __name__ == "__main__":
     path="/home/user/cf/seqs/dataset"
