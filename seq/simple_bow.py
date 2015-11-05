@@ -1,6 +1,7 @@
 import imp
 utils =imp.load_source("utils","/home/user/cf/conv_frames/utils.py")
 import seq
+import numpy as np
 
 class BOW(object):
     def __init__(self):
@@ -52,7 +53,7 @@ def create_vectors(dataset,bow):
         norm_const=float(sum(vector))
         vector=[float(cord_i)/norm_const for cord_i in vector]
         vectors.append(vector)
-    return vectors
+    return td_idf(vectors)
 
 def get_idf(vectors):
     d=float(len(vectors))
@@ -61,11 +62,11 @@ def get_idf(vectors):
     idf=[map(binarize,vectors[:,i])  for i in range(size)]
     idf=[sum(vec) for vec in idf]
     idf=[np.log(d/ dt) for dt in idf]
-    return idf
+    return idf,vectors
 
 def td_idf(vectors):
-    idf=get_idf(vectors)
-    new_vectors=[z*vectors[:,i] for i,z in enumerate(idf)]]
+    idf,vectors=get_idf(vectors)
+    new_vectors=[idf[i]*vectors[:,i] for i in range(len(idf))]
     return np.array(new_vectors)    
 
 def binarize(x):
