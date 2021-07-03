@@ -12,10 +12,11 @@ import tensorflow.keras.losses
 import data.imgs,data.feats
 
 class TC_NN(object):
-    def __init__(self):
+    def __init__(self,n_hidden=100):
         self.n_kern=[64,64,64]
         self.kern_size=[(5,5),(5,5),(5,5)]
-        self.pool_size=[(2,2),(2,2),(2,2)]	
+        self.pool_size=[(2,2),(2,2),(2,2)]
+        self.n_hidden=n_hidden
 
     def __call__(self,params):
         inputs = Input(shape=(params['seq_len'],*params['dims'],1))
@@ -23,13 +24,9 @@ class TC_NN(object):
         for i,n_kern_i in enumerate(self.n_kern):
             x=Conv2D(n_kern_i, kernel_size=self.kern_size[i])(x)
             x=MaxPool2D(pool_size=self.pool_size[i])(x)
-#        x = Conv2D(16, 5)(x)
-#        x = MaxPool2D()(x)
-#        x = Conv2D(16, 5)(x)
-#        x = MaxPool2D()(x)
         num_features_cnn = np.prod(K.int_shape(x)[1:])
         x = Lambda(lambda y: K.reshape(y, (-1, params['seq_len'], num_features_cnn)))(x)
-        x = TCN(2*params['n_cats'],name="hidden")(x)
+        x = TCN(self.n_hidden,name="hidden")(x)
         x = Dense(params['n_cats'], activation='sigmoid')(x)
         model = Model(inputs=[inputs], outputs=[x])
 #       model.summary()
@@ -48,7 +45,7 @@ def single_train(in_path,out_path=None,seq_size=20,n_epochs=5):
         y=to_one_hot(y,params["n_cats"])
     make_tcn=TC_NN()
     model=make_tcn(params)
-    model.fit(X,y,epochs=n_epochs)
+    model.fit(X,y,epochs=n_epochs,batch_size=16)
     if(out_path):
         model.save_weights(out_path)
 
@@ -84,5 +81,5 @@ def to_one_hot(y,n_cats=20):
     return one_hot
 
 in_path="../MSR/frames"
-#single_train(in_path,"test",n_epochs=100)
+single_train(in_path,"test",n_epochs=100)
 single_extract(in_path,"test","feats")
