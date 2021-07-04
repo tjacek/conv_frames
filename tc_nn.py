@@ -9,7 +9,7 @@ from tensorflow.keras.models import Sequential
 from tcn import TCN, tcn_full_summary
 from keras.models import load_model
 import tensorflow.keras.losses
-import data.imgs,data.feats
+import data.imgs,data.feats,files
 
 class TC_NN(object):
     def __init__(self,n_hidden=100):
@@ -26,7 +26,7 @@ class TC_NN(object):
             x=MaxPool2D(pool_size=self.pool_size[i])(x)
         num_features_cnn = np.prod(K.int_shape(x)[1:])
         x = Lambda(lambda y: K.reshape(y, (-1, params['seq_len'], num_features_cnn)))(x)
-        x = TCN(self.n_hidden,name="hidden")(x)
+        x = TCN(self.n_hidden,name="hidden",use_batch_norm=True,dropout_rate=0.5)(x)
         x = Dense(params['n_cats'], activation='sigmoid')(x)
         model = Model(inputs=[inputs], outputs=[x])
 #       model.summary()
@@ -34,6 +34,11 @@ class TC_NN(object):
         model.compile('adam', 'binary_crossentropy', metrics=['accuracy'])
         return model
 
+def single_exp(in_path,out_path,n_epochs=100):
+    paths=files.prepare_dirs(out_path,["nn","feats"])
+    print(paths)
+    single_train(in_path,paths["nn"],n_epochs=n_epochs)
+    single_extract(in_path,paths["nn"],paths["feats"])
 
 def single_train(in_path,out_path=None,seq_size=20,n_epochs=5):
     frame_seq=data.imgs.read_frame_seqs(in_path,n_split=1)
@@ -56,7 +61,6 @@ def single_extract(in_path,nn_path,out_path):
     params={'seq_len':20,'dims':(64,64),'n_cats':frame_seq.n_cats()}
     make_tcn=TC_NN()
     model=make_tcn(params)   
-#    model=make_tcn(params)
     model.load_weights(nn_path)
     extractor=Model(inputs=model.input,
                 outputs=model.get_layer("hidden").output)
@@ -81,5 +85,4 @@ def to_one_hot(y,n_cats=20):
     return one_hot
 
 in_path="../MSR/frames"
-single_train(in_path,"test",n_epochs=100)
-single_extract(in_path,"test","feats")
+single_exp(in_path,"drop")
