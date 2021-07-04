@@ -25,6 +25,10 @@ class FrameSeqs(dict):
         return sorted(self.keys(),key=files.natural_keys) 
 
     def dims(self):
+        shape=self.shape()
+        return (shape[0],shape[1])
+
+    def shape(self):
         return list(self.values())[0][0].shape
 
     def split(self,selector=None):
