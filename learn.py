@@ -18,8 +18,11 @@ class Train(object):
             y=to_one_hot(y,params["n_cats"])
         model=self.make_nn(params)
         model.fit(X,y,epochs=n_epochs,batch_size=self.batch_size)
-        if(out_path):
-            model.save_weights(out_path)
+        save(model,out_path)
+
+def save(model,out_path):
+    if(out_path):
+        model.save_weights(out_path)
 
 class Extract(object):
     def __init__(self,make_nn,read=None,name="hidden"):
