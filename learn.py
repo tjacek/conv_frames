@@ -33,19 +33,33 @@ class Extract(object):
     def __call__(self,frame_seq,nn_path,out_path):
         if(self.read and type(frame_seq)==str):
             frame_seq=self.read(frame_seq)	
+        model=read_model(frame_seq,nn_path,self.make_nn)
+        extractor=get_extractor(model,self.name)
+        feats=get_features(frame_seq,extractor)
+        feats.save(out_path)
+
+def get_features(frame_seq,extractor):
+    feats=data.feats.Feats()
+    for i,name_i in enumerate(frame_seq.names()):
+        x_i=np.array(frame_seq[name_i])
+        x_i=np.expand_dims(x_i,axis=0)
+        feats[name_i]= extractor.predict(x_i)
+    return feats
+   
+
+def read_model(frame_seq,nn_path,make_nn,params=None):
+    if(params is None):
         params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
                 'n_cats':frame_seq.n_cats()}
-        model=self.make_nn(params)
-        model.load_weights(nn_path)
-        extractor=Model(inputs=model.input,
-                outputs=model.get_layer(self.name).output)
-        extractor.summary()
-        feats=data.feats.Feats()
-        for i,name_i in enumerate(frame_seq.names()):
-            x_i=np.array(frame_seq[name_i])
-            x_i=np.expand_dims(x_i,axis=0)
-            feats[name_i]= extractor.predict(x_i)
-        feats.save(out_path)
+    model=make_nn(params)
+    model.load_weights(nn_path)
+    return model
+
+def get_extractor(model,name):
+    extractor=Model(inputs=model.input,
+                outputs=model.get_layer(name).output)
+    extractor.summary()    
+    return extractor
 
 def to_one_hot(y,n_cats=20):
     one_hot=np.zeros((len(y),n_cats))

@@ -15,6 +15,22 @@ def train_student(frame_path,teacher_path,out_path,n_epochs=5):
     model.fit(X,y,epochs=n_epochs)
     learn.save(model,"%s/nn" % out_path)
 
+def extract_student(frame_path,nn_path,out_path):
+    read=tc_nn.get_read(seq_len=20,dim=(64,64))
+    make_tcn=tc_nn.TC_NN(loss='mean_squared_error')
+    frame_seq=read(frame_path)
+    params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
+                'n_cats':frame_seq.n_cats()*frame_seq.n_cats()}
+    model=learn.read_model(frame_seq,"%s/nn" %nn_path,make_tcn,params)
+    model.summary()
+    X,y=frame_seq.to_dataset()
+#    pred_y=model.predict(X)
+#    print(pred_y.shape)
+    feats=learn.get_features(frame_seq,model)
+    feats.save("%s/feats"  % out_path)
+
 frame_path="../../2021_VI/raw_3DHOI/3DHOI/frames"
 teacher_path="../ml_utils/3DHOI"
-train_student(frame_path,teacher_path,"student")
+nn_path="student"
+#train_student(frame_path,teacher_path,"student")
+extract_student(frame_path,nn_path,nn_path)
