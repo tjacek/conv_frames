@@ -12,11 +12,13 @@ import tensorflow.keras.losses
 import data.imgs,learn,files,ens
 
 class TC_NN(object):
-    def __init__(self,n_hidden=100):
+    def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True):
         self.n_kern=[64,64,64]
         self.kern_size=[(5,5),(5,5),(5,5)]
         self.pool_size=[(2,2),(2,2),(2,2)]
         self.n_hidden=n_hidden
+        self.loss=loss
+        self.batch=batch
 
     def __call__(self,params):
         inputs = Input(shape=(params['seq_len'],*params['dims'],1))
@@ -26,11 +28,11 @@ class TC_NN(object):
             x=MaxPool2D(pool_size=self.pool_size[i])(x)
         num_features_cnn = np.prod(K.int_shape(x)[1:])
         x = Lambda(lambda y: K.reshape(y, (-1, params['seq_len'], num_features_cnn)))(x)
-        x = TCN(self.n_hidden,name="hidden",use_batch_norm=True)(x)
+        x = TCN(self.n_hidden,name="hidden",use_batch_norm=self.batch)(x)
         x = Dense(params['n_cats'], activation='sigmoid')(x)
         model = Model(inputs=[inputs], outputs=[x])
         tcn_full_summary(model, expand_residual_blocks=False)
-        model.compile('adam', 'binary_crossentropy', metrics=['accuracy'])
+        model.compile('adam',self.loss, metrics=['accuracy'])
         return model
 
 def ensemble_exp(frame_path,ens_path,n_epochs=5):
@@ -66,5 +68,6 @@ def to_dataset(frames):
                 'n_cats':frames.n_cats()}
     return X,y,params
 
-in_path="../MSR/frames"
-ensemble_exp(in_path,"ens",n_epochs=5)
+if __name__ == "__main__":
+    in_path="../MSR/frames"
+    ensemble_exp(in_path,"ens",n_epochs=5)
