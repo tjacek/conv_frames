@@ -142,3 +142,14 @@ def tranform_frames(in_path,out_path,fun,whole=False):
     else:
         frames.transform(fun)
     frames.save(out_path)
+
+def agum(frame_seqs,funcs):
+    if(type(funcs)==list):
+        funcs=[funcs]
+    agum_dict=FrameSeqs()
+    for name_i,seq_i in frame_seqs.items():
+        agum_dict[name_i]=seq_i
+        for j,fun_j in  enumerate(funcs):
+            name_j=files.Name("%s_%d" % (name_j,j))
+            agum_dict[name_j]=fun_j(seq_i)
+    return agum_dict

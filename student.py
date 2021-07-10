@@ -1,21 +1,27 @@
+import numpy as np
 import data.feats
 import tc_nn,learn,files
 
 def train_student(frame_path,teacher_path,out_path,n_epochs=100):
     files.make_dir(out_path)
-    read=tc_nn.get_read(seq_len=20,dim=(64,64))
-    frame_seq=read(frame_path)
-    frame_seq=frame_seq.split()[0]
+    frame_seq,teacher_feat,params=read_data(frame_path,teacher_path)
+    flip_agum(frame_seq,teacher_feat)
     make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
-    params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
-                'n_cats':frame_seq.n_cats() * frame_seq.n_cats()}
     model=make_tcn(params)
-    teacher_feat=data.feats.read_feats(teacher_path)
-    teacher_feat=teacher_feat.split()[0]
     y=teacher_feat.to_dataset()[0]
     X=frame_seq.to_dataset()[0]
     model.fit(X,y,epochs=n_epochs,batch_size=16)
     learn.save(model,"%s/nn" % out_path)
+
+def read_data(frame_path,teacher_path):
+    read=tc_nn.get_read(seq_len=20,dim=(64,64))
+    frame_seq=read(frame_path)
+    frame_seq=frame_seq.split()[0]
+    params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
+                'n_cats':frame_seq.n_cats() * frame_seq.n_cats()}
+    teacher_feat=data.feats.read_feats(teacher_path)
+    teacher_feat=teacher_feat.split()[0]
+    return frame_seq,teacher_feat,params
 
 def extract_student(frame_path,nn_path,out_path):
     read=tc_nn.get_read(seq_len=20,dim=(64,64))
@@ -29,8 +35,17 @@ def extract_student(frame_path,nn_path,out_path):
     feats=learn.get_features(frame_seq,model)
     feats.save("%s/feats"  % out_path)
 
-frame_path="../../2021_VI/raw_3DHOI/3DHOI/frames"
+def flip_agum(frame_seqs,teacher_feat):
+    pairs=list(frame_seqs.items())
+    for name_i,seq_i in pairs:
+        new_seq_i=[np.fliplr(frame_j) for frame_j in seq_i] 
+        new_name_i=files.Name("%s_1" % name_i)
+        frame_seqs[new_name_i]=new_seq_i
+        teacher_feat[new_name_i]=teacher_feat[name_i]
+    return frame_seqs,teacher_feat
+
+frame_path="../3DHOI/frames"
 teacher_path="../ml_utils/3DHOI"
-nn_path="student_nobatch"
+nn_path="student_agum"
 train_student(frame_path,teacher_path,nn_path)
 extract_student(frame_path,nn_path,nn_path)
