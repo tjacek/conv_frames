@@ -2,7 +2,7 @@ import tensorflow.keras
 import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-import data.feats,learn
+import data.feats,learn,ens
 
 def make_nn(params):
     model = Sequential()
@@ -11,6 +11,13 @@ def make_nn(params):
     model.compile('adam','binary_crossentropy', metrics=['accuracy'])
     model.summary()
     return model
+
+def ensemble_exp(input_dir,n_epochs=5):
+    read=data.feats.read_feats
+    train=learn.Train(to_dataset,make_nn,read,batch_size=16)
+    dir_names=["simple_nn","simple_feats"]
+    ensemble=ens.EnsTransform(funcs,dir_names,input_dir)
+    ensemble(input_paths,out_path, arg_dict={"n_epochs":n_epochs})
 
 def simple_exp(feat_path,out_path,n_epochs=5):
     read=data.feats.read_feats#(in_path)
