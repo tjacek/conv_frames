@@ -2,7 +2,7 @@ import tensorflow.keras
 import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-import data.feats,learn,ens
+import data.feats,learn,ens,files
 
 def make_nn(params):
     model = Sequential()
@@ -12,11 +12,15 @@ def make_nn(params):
     model.summary()
     return model
 
-def ensemble_exp(input_dir,n_epochs=5):
+def ensemble_exp(in_path,out_path,n_epochs=5):
+    input_paths=files.top_files(in_path)
+    print(input_paths)
     read=data.feats.read_feats
     train=learn.Train(to_dataset,make_nn,read,batch_size=16)
-    dir_names=["simple_nn","simple_feats"]
-    ensemble=ens.EnsTransform(funcs,dir_names,input_dir)
+    funcs=[[train,["feats","simple_nn","n_epochs"]]]
+    dir_names=["simple_nn"]#,"simple_feats"]
+    ensemble=ens.EnsTransform(funcs,dir_names,"feats")
+    files.make_dir(out_path)
     ensemble(input_paths,out_path, arg_dict={"n_epochs":n_epochs})
 
 def simple_exp(feat_path,out_path,n_epochs=5):
@@ -29,5 +33,5 @@ def to_dataset(feat_dict):
     params={'dims':X.shape[1],'n_cats':max(y)+1}
     return X,y,params
 
-in_path="../../2021_VI/ICCCI/ens_splitI/feats/0"
-simple_exp(in_path,"test")
+in_path="../../2021_VI/ICCCI/ens_splitI/feats"
+ensemble_exp(in_path,"feats")
