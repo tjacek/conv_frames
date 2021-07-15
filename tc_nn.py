@@ -68,6 +68,18 @@ def to_dataset(frames):
                 'n_cats':frames.n_cats()}
     return X,y,params
 
+def read_model(frame_seq,nn_path,make_nn,params=None):
+    if(params is None):
+        params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
+                'n_cats':frame_seq.n_cats()}
+    model=make_nn(params)
+    model.load_weights(nn_path)
+    return model
+
+def save(model,out_path):
+    if(out_path):
+        model.save_weights(out_path)
+
 if __name__ == "__main__":
     in_path="../MSR/frames"
     ensemble_exp(in_path,"ens",n_epochs=5)

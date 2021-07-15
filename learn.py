@@ -1,14 +1,18 @@
 import numpy as np
+import tensorflow.keras
 from tensorflow.keras import Input, Model
 import data.feats
 
 class Train(object):
-    def __init__(self,to_dataset,make_nn,read=None,batch_size=16):
+    def __init__(self,to_dataset,make_nn,read=None,save_model=None,batch_size=16):
         self.read=read
         self.to_dataset=to_dataset
         self.make_nn=make_nn
         self.batch_size=batch_size
-        
+        if(save_model is None):
+            save_model=base_save_model
+        self.save=save_model
+
     def __call__(self,frame_seq,out_path,n_epochs=5):
         if(self.read and type(frame_seq)==str):
             frame_seq=self.read(frame_seq)	
@@ -18,22 +22,21 @@ class Train(object):
             y=to_one_hot(y,params["n_cats"])
         model=self.make_nn(params)
         model.fit(X,y,epochs=n_epochs,batch_size=self.batch_size)
-        save(model,out_path)
-
-def save(model,out_path):
-    if(out_path):
-        model.save_weights(out_path)
+        self.save(model,out_path)
 
 class Extract(object):
-    def __init__(self,make_nn,read=None,name="hidden"):
+    def __init__(self,make_nn,read=None,read_model=None,name="hidden"):
         self.read=read
         self.make_nn=make_nn
         self.name=name
+        if(read_model is None):
+            read_model=base_read_model
+        self.read_model=read_model
 
     def __call__(self,frame_seq,nn_path,out_path):
         if(self.read and type(frame_seq)==str):
             frame_seq=self.read(frame_seq)	
-        model=read_model(frame_seq,nn_path,self.make_nn)
+        model=self.read_model(frame_seq,nn_path)#,self.make_nn)
         extractor=get_extractor(model,self.name)
         feats=get_features(frame_seq,extractor)
         feats.save(out_path)
@@ -46,14 +49,12 @@ def get_features(frame_seq,extractor):
         feats[name_i]= extractor.predict(x_i)
     return feats
    
+def base_read_model(frame_seq,nn_path):
+    return tensorflow.keras.models.load_model(nn_path)
 
-def read_model(frame_seq,nn_path,make_nn,params=None):
-    if(params is None):
-        params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
-                'n_cats':frame_seq.n_cats()}
-    model=make_nn(params)
-    model.load_weights(nn_path)
-    return model
+def base_save_model(model,out_path):
+    if(out_path):
+        model.save(out_path)
 
 def get_extractor(model,name):
     extractor=Model(inputs=model.input,

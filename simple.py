@@ -6,7 +6,7 @@ import data.feats,learn,ens,files
 
 def make_nn(params):
     model = Sequential()
-    model.add(Dense(100, input_dim=params['dims'], activation='relu'))
+    model.add(Dense(100, input_dim=params['dims'], activation='relu',name="hidden"))
     model.add(Dense(params['n_cats'], activation='relu'))
     model.compile('adam','binary_crossentropy', metrics=['accuracy'])
     model.summary()
@@ -23,15 +23,18 @@ def ensemble_exp(in_path,out_path,n_epochs=5):
     files.make_dir(out_path)
     ensemble(input_paths,out_path, arg_dict={"n_epochs":n_epochs})
 
-def simple_exp(feat_path,out_path,n_epochs=5):
+def single_exp(feat_path,nn_path,out_path,n_epochs=5):
     read=data.feats.read_feats#(in_path)
     train=learn.Train(to_dataset,make_nn,read,batch_size=16)
-    train(feat_path,out_path,n_epochs)	
+    train(feat_path,nn_path,n_epochs)
+    extract=learn.Extract(make_nn,read=read,name="hidden")
+    extract(feat_path,nn_path,out_path)
 
 def to_dataset(feat_dict):
     X,y=feat_dict.to_dataset()
     params={'dims':X.shape[1],'n_cats':max(y)+1}
     return X,y,params
 
-in_path="../../2021_VI/ICCCI/ens_splitI/feats"
-ensemble_exp(in_path,"feats")
+in_path="../../2021_VI/ICCCI/ens_splitI/feats/0"
+#ensemble_exp(in_path,"feats")
+single_exp(in_path,"nn","feat",n_epochs=5)
