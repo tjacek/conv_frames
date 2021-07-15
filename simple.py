@@ -17,8 +17,10 @@ def ensemble_exp(in_path,out_path,n_epochs=5):
     print(input_paths)
     read=data.feats.read_feats
     train=learn.Train(to_dataset,make_nn,read,batch_size=16)
-    funcs=[[train,["feats","simple_nn","n_epochs"]]]
-    dir_names=["simple_nn"]#,"simple_feats"]
+    extract=learn.Extract(make_nn,read,name="hidden")
+    funcs=[[train,["feats","nn","n_epochs"]],
+           [extract,["feats","nn","simple_feats"]]]
+    dir_names=["nn","simple_feats"]
     ensemble=ens.EnsTransform(funcs,dir_names,"feats")
     files.make_dir(out_path)
     ensemble(input_paths,out_path, arg_dict={"n_epochs":n_epochs})
@@ -35,6 +37,6 @@ def to_dataset(feat_dict):
     params={'dims':X.shape[1],'n_cats':max(y)+1}
     return X,y,params
 
-in_path="../../2021_VI/ICCCI/ens_splitI/feats/0"
-#ensemble_exp(in_path,"feats")
-single_exp(in_path,"nn","feat",n_epochs=5)
+in_path="../../2021_VI/ICCCI/ens_splitI/feats"
+#single_exp(in_path,"nn","feat",n_epochs=5)
+ensemble_exp(in_path,"test",n_epochs=5)
