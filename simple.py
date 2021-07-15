@@ -12,10 +12,12 @@ def make_nn(params):
     model.summary()
     return model
 
-def ensemble_exp(in_path,out_path,n_epochs=5):
-    input_paths=files.top_files(in_path)
+def ensemble_exp(common,binary,out_path,n_epochs=5):
+    input_paths=files.top_files(binary)
     print(input_paths)
-    read=data.feats.read_feats
+    def read(feat_path):
+        feats_i=data.feats.read_feats(common+[feat_path])
+        return feats_i
     train=learn.Train(to_dataset,make_nn,read,batch_size=16)
     extract=learn.Extract(make_nn,read,name="hidden")
     funcs=[[train,["feats","nn","n_epochs"]],
@@ -37,6 +39,7 @@ def to_dataset(feat_dict):
     params={'dims':X.shape[1],'n_cats':max(y)+1}
     return X,y,params
 
-in_path="../../2021_VI/ICCCI/ens_splitI/feats"
+common=["../3DHOI/dtw/corl/dtw","../3DHOI/dtw/max_z/dtw","../3DHOI/1D_CNN/feats"]
+binary="../3DHOI/ens_splitI/feats"
 #single_exp(in_path,"nn","feat",n_epochs=5)
-ensemble_exp(in_path,"test",n_epochs=5)
+ensemble_exp(common,binary,"test",n_epochs=100)
