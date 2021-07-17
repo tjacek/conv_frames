@@ -1,7 +1,7 @@
 import numpy as np,re
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report
-from sklearn.metrics import accuracy_score
+#from sklearn.linear_model import LogisticRegression
+#from sklearn.metrics import classification_report
+#from sklearn.metrics import accuracy_score
 import files
 
 class Feats(dict):
@@ -41,6 +41,13 @@ class Feats(dict):
 		feat_dict={	name_i: extractor(feat_i)
 				for name_i,feat_i in self.items()}
 		return Feats(feat_dict)
+
+	def remove_nan(self):
+		for feat_i in self.values():
+			feat_i[np.isnan(feat_i)]=0
+
+	def has_nan(self):
+		return any([np.isnan(x_i).any() for x_i in self.values()])
 
 	def norm(self):
 		X,y=self.to_dataset()
