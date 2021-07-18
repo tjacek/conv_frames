@@ -45,8 +45,12 @@ def flip_agum(frame_seqs,teacher_feat):
         teacher_feat[new_name_i]=teacher_feat[name_i]
     return frame_seqs,teacher_feat
 
+def student_exp(frame_path,teacher_path,nn_path,n_epochs=100):
+    n_cats=train_student(frame_path,teacher_path,nn_path,n_epochs=100)
+    np.set_printoptions(threshold=n_cats)
+    extract_student(frame_path,nn_path,nn_path,n_cats)
+
 frame_path="../3DHOI/frames"
 teacher_path="../ml_utils/3DHOI_simple"
 nn_path="student_simple"
-n_cats=train_student(frame_path,teacher_path,nn_path,n_epochs=5)
-extract_student(frame_path,nn_path,nn_path,n_cats)
+student_exp(frame_path,teacher_path,nn_path,n_epochs=100)
