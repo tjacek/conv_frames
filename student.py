@@ -2,17 +2,39 @@ import numpy as np
 import data.feats
 import tc_nn,learn,files
 
-def train_student(frame_path,teacher_path,out_path,n_epochs=100):
-    files.make_dir(out_path)
-    frame_seq,teacher_feat,params=read_data(frame_path,teacher_path)
-#    flip_agum(frame_seq,teacher_feat)
-    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
-    model=make_tcn(params)
-    y=teacher_feat.to_dataset()[0]
-    X=frame_seq.to_dataset()[0]
-    model.fit(X,y,epochs=n_epochs,batch_size=16)
-    tc_nn.save(model,"%s/nn" % out_path)
-    return params["n_cats"]
+class TrainStudent(object):
+    def __init__(self,make_tcn=None,batch_size=16):
+        if(make_tcn is None):
+            make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
+        self.make_tcn=make_tcn
+        self.batch_size=batch_size
+
+    def __call__(self,frame_path,teacher_path,out_path,n_epochs=100):
+        files.make_dir(out_path)
+        frame_seq,teacher_feat,params=read_data(frame_path,teacher_path)
+        model=self.make_tcn(params)
+        y=teacher_feat.to_dataset()[0]
+        X=frame_seq.to_dataset()[0]
+        model.fit(X,y,epochs=n_epochs,batch_size=self.batch_size)
+        tc_nn.save(model,"%s/nn" % out_path)
+        return params["n_cats"]
+
+class ExtractStudent(object):
+    def __init__(self, make_tcn=None):
+        if(make_tcn is None):
+            make_tcn=tc_nn.TC_NN(loss='mean_squared_error')
+        self.make_tcn=make_tcn
+        self.read=tc_nn.get_read(seq_len=20,dim=(64,64))
+
+    def __call__(self,mframe_path,nn_path,out_path,n_cats):
+        frame_seq=self.read(frame_path)
+        params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
+                'n_cats':n_cats}
+        model=tc_nn.read_model(frame_seq,"%s/nn" %nn_path,self.make_tcn,params)
+        model.summary()
+        X,y=frame_seq.to_dataset()
+        feats=learn.get_features(frame_seq,model)
+        feats.save("%s/feats"  % out_path)
 
 def read_data(frame_path,teacher_path):
     read=tc_nn.get_read(seq_len=20,dim=(64,64))
@@ -21,20 +43,8 @@ def read_data(frame_path,teacher_path):
     teacher_feat=data.feats.read_feats(teacher_path)
     teacher_feat=teacher_feat.split()[0]
     params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
-                'n_cats': teacher_feat.dim() }#frame_seq.n_cats() * frame_seq.n_cats()}
+                'n_cats': teacher_feat.dim() }
     return frame_seq,teacher_feat,params
-
-def extract_student(frame_path,nn_path,out_path,n_cats):
-    read=tc_nn.get_read(seq_len=20,dim=(64,64))
-    make_tcn=tc_nn.TC_NN(loss='mean_squared_error')
-    frame_seq=read(frame_path)
-    params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
-                'n_cats':n_cats}
-    model=tc_nn.read_model(frame_seq,"%s/nn" %nn_path,make_tcn,params)
-    model.summary()
-    X,y=frame_seq.to_dataset()
-    feats=learn.get_features(frame_seq,model)
-    feats.save("%s/feats"  % out_path)
 
 def flip_agum(frame_seqs,teacher_feat):
     pairs=list(frame_seqs.items())
@@ -45,12 +55,16 @@ def flip_agum(frame_seqs,teacher_feat):
         teacher_feat[new_name_i]=teacher_feat[name_i]
     return frame_seqs,teacher_feat
 
-def student_exp(frame_path,teacher_path,nn_path,n_epochs=100):
-    n_cats=train_student(frame_path,teacher_path,nn_path,n_epochs=100)
+def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
+    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
+    n_cats=train_student(frame_path,teacher_path,nn_path,n_epochs=100,make_tcn=make_tcn)
     np.set_printoptions(threshold=n_cats)
-    extract_student(frame_path,nn_path,nn_path,n_cats)
+    extract_student(frame_path,nn_path,nn_path,n_cats,make_tcn=make_tcn)
+
+def ens_student():
+
 
 frame_path="../3DHOI/frames"
 teacher_path="../ml_utils/3DHOI_simple"
-nn_path="student_simple"
+nn_path="student_simple_160"
 student_exp(frame_path,teacher_path,nn_path,n_epochs=100)

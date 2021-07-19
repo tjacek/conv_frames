@@ -12,8 +12,9 @@ import tensorflow.keras.losses
 import data.imgs,learn,files,ens
 
 class TC_NN(object):
-    def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True):
-        self.n_kern=[64,64,64]
+    def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True,
+        n_kern=[64,64,64]):
+        self.n_kern=n_kern#[64,64,64]
         self.kern_size=[(5,5),(5,5),(5,5)]
         self.pool_size=[(2,2),(2,2),(2,2)]
         self.n_hidden=n_hidden
