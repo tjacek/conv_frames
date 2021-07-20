@@ -56,15 +56,23 @@ def flip_agum(frame_seqs,teacher_feat):
     return frame_seqs,teacher_feat
 
 def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
-    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
-    n_cats=train_student(frame_path,teacher_path,nn_path,n_epochs=100,make_tcn=make_tcn)
+    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=False,loss='mean_squared_error')
+    train,extract=TrainStudent(make_tcn),ExtractStudent(make_tcn)
+    n_cats=train(frame_path,teacher_path,nn_path,n_epochs=100)
     np.set_printoptions(threshold=n_cats)
-    extract_student(frame_path,nn_path,nn_path,n_cats,make_tcn=make_tcn)
+    extract(frame_path,nn_path,nn_path,n_cats)
 
 def ens_student():
-
+    train=learn.Train(to_dataset,make_nn,read,batch_size=16)
+    extract=learn.Extract(make_nn,read,name="hidden")
+    funcs=[[train,["feats","nn","n_epochs"]],
+           [extract,["feats","nn","simple_feats"]]]
+    dir_names=["nn","simple_feats"]
+    ensemble=ens.EnsTransform(funcs,dir_names,"feats")
+    files.make_dir(out_path)
+    ensemble(input_paths,out_path, arg_dict={"n_epochs":n_epochs})
 
 frame_path="../3DHOI/frames"
 teacher_path="../ml_utils/3DHOI_simple"
-nn_path="student_simple_160"
-student_exp(frame_path,teacher_path,nn_path,n_epochs=100)
+nn_path="student_simple_nobatch"
+single_student(frame_path,teacher_path,nn_path,n_epochs=100)
