@@ -11,6 +11,18 @@ from keras.models import load_model
 import tensorflow.keras.losses
 import data.imgs,learn,files,ens
 
+class ReadFrames(object):
+    def __init__(self,seq_len=20,dim=(64,64),n_split=1):
+        self.seq_len=seq_len
+        self.dim=dim
+        self.n_split=n_split
+
+    def __call__(self,in_path):
+        frame_seq=data.imgs.read_frame_seqs(in_path,n_split=self.n_split)
+        frame_seq.subsample(self.seq_len)
+        frame_seq.scale(self.dim)
+        return frame_seq
+
 class TC_NN(object):
     def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True,
         n_kern=[64,64,64]):
@@ -54,14 +66,6 @@ def make_single_exp():
     train=learn.Train(to_dataset,make_nn,read=read)
     extract=learn.Extract(make_nn,read)
     return train,extract,read
-
-def get_read(seq_len=20,dim=(64,64)):
-    def helper(in_path):
-        frame_seq=data.imgs.read_frame_seqs(in_path,n_split=1)
-        frame_seq.subsample(seq_len)
-        frame_seq.scale(dim)
-        return frame_seq
-    return helper
 
 def to_dataset(frames):
     X,y=frames.to_dataset()
