@@ -12,16 +12,24 @@ import tensorflow.keras.losses
 import data.imgs,learn,files,ens
 
 class ReadFrames(object):
-    def __init__(self,seq_len=20,dim=(64,64),n_split=1):
+    def __init__(self,seq_len=20,dim=(64,64),n_split=1,agum=1):
         self.seq_len=seq_len
         self.dim=dim
         self.n_split=n_split
+        self.agum=agum
 
     def __call__(self,in_path):
         frame_seq=data.imgs.read_frame_seqs(in_path,n_split=self.n_split)
-        frame_seq.subsample(self.seq_len)
+        if(self.agum is None or self.agum==1):
+            frame_seq.subsample(self.seq_len)
+        else:
+            sample=data.imgs.MinLength(self.seq_len)
+            def agum_fun(frames):
+                return [ sample(frames) for i in range(self.agum)]
+            frame_seq=frame_seq.agum(agum_fun)
         frame_seq.scale(self.dim)
         return frame_seq
+
 
 class TC_NN(object):
     def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True,

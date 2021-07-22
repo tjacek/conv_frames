@@ -80,6 +80,15 @@ class FrameSeqs(dict):
         fun=MinLength(size)
         self.transform(fun,new=False,single=False)
 
+    def agum(self,agum_fun):
+        new_frames=FrameSeqs()
+        for name_i,seq_i in self.items():
+            agum_seq=agum_fun(seq_i)
+            for j,seq_j in enumerate(agum_seq):     
+                new_name_i=files.Name("%s_%d" % i)
+                new_frames[new_name_i]=new_seq_i
+        return new_frames
+
 class MinLength(object):
     def __init__(self,size):
         self.size = size
