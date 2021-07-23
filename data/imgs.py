@@ -80,17 +80,17 @@ class FrameSeqs(dict):
         fun=MinLength(size)
         self.transform(fun,new=False,single=False)
 
-    def agum(self,agum_fun):
-        new_frames={}#FrameSeqs()
+    def subsample_agum(self,size=20,n_agum=2):
         train,test=self.split()
+        fun=MinLength(size)
+        test=test.transform(fun,new=False,single=False)
+        new_frames={}
         for name_i,frames_i in train.items():
-            agum_seq=agum_fun(frames_i)
-            for j,seq_j in enumerate(agum_seq):     
+            for j in range(n_agum):
                 new_name_i=files.Name("%s_%d" % (name_i,j))
-                new_frames[new_name_i]=seq_j
-#        raise Exception(len(new_frames))
+                new_frames[new_name_i]=fun(frames_i)
         full_frames=list(test.items()) + list(new_frames.items())
-        return FrameSeqs( full_frames)
+        return FrameSeqs(full_frames)
 
 class MinLength(object):
     def __init__(self,size):

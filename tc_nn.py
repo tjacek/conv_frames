@@ -23,15 +23,15 @@ class ReadFrames(object):
         if( self.use_agum()):
             frame_seq.subsample(self.seq_len)
         else:
-            sample=data.imgs.MinLength(self.seq_len)
-            def agum_fun(frames):
-                return [ sample(frames) for i in range(self.agum)]
-            frame_seq=frame_seq.agum(agum_fun)
+            frame_seq=frame_seq.subsample_agum(self.seq_len,self.agum)
         frame_seq.scale(self.dim)
         return frame_seq
 
     def use_agum(self):
         return (self.agum is None or self.agum==1)
+
+    def __str__(self):
+        return "%d,%s,%d,%d" % (self.seq_len,str(self.dim),self.n_split,self.agum)
 
 class TC_NN(object):
     def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True,

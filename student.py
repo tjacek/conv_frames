@@ -72,9 +72,9 @@ def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
     make_tcn=tc_nn.TC_NN(n_hidden=100,batch=False,loss='mean_squared_error')
     read=tc_nn.ReadFrames(seq_len=20,dim=(64,64),agum=2)
     train,extract=TrainStudent(read,make_tcn),ExtractStudent(read,make_tcn)
-    n_cats=train(frame_path,teacher_path,nn_path,n_epochs=100)
+    n_cats=144#train(frame_path,teacher_path,nn_path,n_epochs=100)
     np.set_printoptions(threshold=n_cats)
-    extract(frame_path,nn_path,nn_path,n_cats)
+    extract(frame_path,nn_path,"%s/feats" % nn_path,n_cats)
 
 def ens_student(frame_path,student_path,out_path,n_epochs=5):
     read=tc_nn.get_read(seq_len=30,dim=(64,64))
