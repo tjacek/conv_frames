@@ -2,6 +2,7 @@ import numpy as np
 import data.feats
 import tc_nn,learn,files,ens
 
+
 class TrainStudent(object):
     def __init__(self,read=None,make_tcn=None,batch_size=16):
         if(read is None):
@@ -27,6 +28,13 @@ class TrainStudent(object):
         frame_seq=frame_seq.split()[0]
         teacher_feat=data.feats.read_feats(teacher_path)
         teacher_feat=teacher_feat.split()[0]
+        if(not self.read.use_agum()):
+            new_teacher_feat= data.feats.Feats()
+            for name_i in frame_seq.keys():
+                if(not name_i in teacher_feat):
+                    id_i=name_i.sub_seq(3)
+                    new_teacher_feat[name_i]=teacher_feat[id_i]
+            teacher_feat=new_teacher_feat
         params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
                 'n_cats': teacher_feat.dim() }
         return frame_seq,teacher_feat,params
@@ -39,7 +47,7 @@ class ExtractStudent(object):
             make_tcn=tc_nn.TC_NN(loss='mean_squared_error')
         self.read=read
         self.make_tcn=make_tcn
-        self.read=tc_nn.get_read(seq_len=20,dim=(64,64))
+        self.read=read#tc_nn.get_read(seq_len=20,dim=(64,64))
 
     def __call__(self,frame_path,nn_path,out_path,n_cats):
         frame_seq=self.read(frame_path)
@@ -62,7 +70,8 @@ def flip_agum(frame_seqs,teacher_feat):
 
 def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
     make_tcn=tc_nn.TC_NN(n_hidden=100,batch=False,loss='mean_squared_error')
-    train,extract=TrainStudent(make_tcn),ExtractStudent(make_tcn)
+    read=tc_nn.ReadFrames(seq_len=20,dim=(64,64),agum=2)
+    train,extract=TrainStudent(read,make_tcn),ExtractStudent(read,make_tcn)
     n_cats=train(frame_path,teacher_path,nn_path,n_epochs=100)
     np.set_printoptions(threshold=n_cats)
     extract(frame_path,nn_path,nn_path,n_cats)
@@ -81,7 +90,7 @@ def ens_student(frame_path,student_path,out_path,n_epochs=5):
     ensemble(input_paths,out_path, arg_dict=args)
 
 frame_path="../3DHOI/frames"
-teacher_path="../ml_utils/3DHOI_simple"
-nn_path="student_simple_nobatch"
-#single_student(frame_path,teacher_path,nn_path,n_epochs=100)
-ens_student(frame_path,"test/simple_feats","student_ens_30",n_epochs=100)
+teacher_path="../ml_utils/3DHOI/base"
+nn_path="student_agum_20"
+single_student(frame_path,teacher_path,nn_path,n_epochs=100)
+#ens_student(frame_path,"test/simple_feats","student_ens_30",n_epochs=100)

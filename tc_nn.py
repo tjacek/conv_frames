@@ -20,7 +20,7 @@ class ReadFrames(object):
 
     def __call__(self,in_path):
         frame_seq=data.imgs.read_frame_seqs(in_path,n_split=self.n_split)
-        if(self.agum is None or self.agum==1):
+        if( self.use_agum()):
             frame_seq.subsample(self.seq_len)
         else:
             sample=data.imgs.MinLength(self.seq_len)
@@ -30,6 +30,8 @@ class ReadFrames(object):
         frame_seq.scale(self.dim)
         return frame_seq
 
+    def use_agum(self):
+        return (self.agum is None or self.agum==1)
 
 class TC_NN(object):
     def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True,

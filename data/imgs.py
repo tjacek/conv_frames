@@ -81,13 +81,16 @@ class FrameSeqs(dict):
         self.transform(fun,new=False,single=False)
 
     def agum(self,agum_fun):
-        new_frames=FrameSeqs()
-        for name_i,seq_i in self.items():
-            agum_seq=agum_fun(seq_i)
+        new_frames={}#FrameSeqs()
+        train,test=self.split()
+        for name_i,frames_i in train.items():
+            agum_seq=agum_fun(frames_i)
             for j,seq_j in enumerate(agum_seq):     
-                new_name_i=files.Name("%s_%d" % i)
-                new_frames[new_name_i]=new_seq_i
-        return new_frames
+                new_name_i=files.Name("%s_%d" % (name_i,j))
+                new_frames[new_name_i]=seq_j
+#        raise Exception(len(new_frames))
+        full_frames=list(test.items()) + list(new_frames.items())
+        return FrameSeqs( full_frames)
 
 class MinLength(object):
     def __init__(self,size):

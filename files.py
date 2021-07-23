@@ -15,6 +15,9 @@ class Name(str):
     def get_person(self):
         return int(self.split('_')[1])
 
+    def sub_seq(self,k):
+        return Name("_".join(self.split("_")[:k]))
+
 def top_files(path):
     paths=[ path+'/'+file_i for file_i in os.listdir(path)]
     paths=sorted(paths,key=natural_keys)
