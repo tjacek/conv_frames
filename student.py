@@ -2,7 +2,6 @@ import numpy as np
 import data.feats
 import tc_nn,learn,files,ens
 
-
 class TrainStudent(object):
     def __init__(self,read=None,make_tcn=None,batch_size=16):
         if(read is None):
@@ -69,15 +68,15 @@ def flip_agum(frame_seqs,teacher_feat):
     return frame_seqs,teacher_feat
 
 def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
-    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=False,loss='mean_squared_error')
-    read=tc_nn.ReadFrames(seq_len=20,dim=(64,64),agum=2)
+    make_tcn=tc_nn.TC_NN(n_hidden=200,batch=True,loss='mean_squared_error')
+    read=tc_nn.ReadFrames(seq_len=30,dim=(64,64),agum=2)
     train,extract=TrainStudent(read,make_tcn),ExtractStudent(read,make_tcn)
-    n_cats=144#train(frame_path,teacher_path,nn_path,n_epochs=100)
+    n_cats=train(frame_path,teacher_path,nn_path,n_epochs=100)
     np.set_printoptions(threshold=n_cats)
     extract(frame_path,nn_path,"%s/feats" % nn_path,n_cats)
 
 def ens_student(frame_path,student_path,out_path,n_epochs=5):
-    read=tc_nn.get_read(seq_len=30,dim=(64,64))
+    read=tc_nn.ReadFrames(seq_len=30,dim=(64,64),agum=2)
     make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
     train,extract=TrainStudent(read,make_tcn),ExtractStudent(read,make_tcn)
     funcs=[[train,[ "frame","teacher","nn","n_epochs"]],
@@ -90,7 +89,9 @@ def ens_student(frame_path,student_path,out_path,n_epochs=5):
     ensemble(input_paths,out_path, arg_dict=args)
 
 frame_path="../3DHOI/frames"
-teacher_path="../ml_utils/3DHOI/base"
-nn_path="student_agum_20"
+#teacher_path="../3DHOI/1D_CNN/feats"
+teacher_path="../conv_frames/student/ae_30_200/res"
+#nn_path="student/ae_30_200_agum"
+nn_path="../conv_frames/student/ae_30_200/next"
 single_student(frame_path,teacher_path,nn_path,n_epochs=100)
 #ens_student(frame_path,"test/simple_feats","student_ens_30",n_epochs=100)

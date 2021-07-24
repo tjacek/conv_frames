@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
-import tensorflow.keras
+import tensorflow.keras as keras
 from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import Dense,Conv2D,MaxPool2D
@@ -42,6 +42,7 @@ class TC_NN(object):
         self.n_hidden=n_hidden
         self.loss=loss
         self.batch=batch
+        self.optim=keras.optimizers.Adam()#learning_rate=0.1)
 
     def __call__(self,params):
         inputs = Input(shape=(params['seq_len'],*params['dims'],1))
@@ -55,7 +56,8 @@ class TC_NN(object):
         x = Dense(params['n_cats'], activation='sigmoid')(x)
         model = Model(inputs=[inputs], outputs=[x])
         tcn_full_summary(model, expand_residual_blocks=False)
-        model.compile('adam',self.loss, metrics=['accuracy'])
+        model.compile(optimizer=self.optim,  #'adam',
+            loss=self.loss, metrics=['accuracy'])
         return model
 
 def ensemble_exp(frame_path,ens_path,n_epochs=5):
