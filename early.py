@@ -27,9 +27,9 @@ class EarlyReader(object):
     def get_fraction(self,len_i):
         return int(np.ceil(len_i*self.ratio))
 
-def single_exp(frame_path,out_path,n_epochs=100):
+def single_exp(frame_path,out_path,n_epochs=100,ratio=0.1):
     make_nn=tc_nn.TC_NN(n_hidden=100,batch=True)#,loss='mean_squared_error')
-    read=EarlyReader(ratio=1.0,dim=(64,64))
+    read=EarlyReader(ratio=ratio,dim=(64,64))
     train=learn.Train(tc_nn.to_dataset,make_nn,read=read,batch_size=8)
     extract=learn.Extract(make_nn,read)
     files.make_dir(out_path)
@@ -37,5 +37,12 @@ def single_exp(frame_path,out_path,n_epochs=100):
     train(frame_path,nn_path,n_epochs=n_epochs)
     extract(frame_path,nn_path,feath_path)
 
+def ens_exp(frame_path,out_path,n_epochs=100):
+    files.make_dir(out_path)
+    for i in range(10):
+        ratio_i=(i+1)*0.1
+        out_i="%s/%d" % (out_path,(i+1))
+        single_exp(frame_path,out_i,n_epochs,ratio_i)
+
 frame_path="../../2021_II/clean3/base/frames"
-single_exp(frame_path,"early_test",n_epochs=5)
+ens_exp(frame_path,"early",n_epochs=100)
