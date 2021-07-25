@@ -1,5 +1,5 @@
 import numpy as np
-import data.imgs
+import data.imgs,tc_nn,files,learn
 
 class EarlyReader(object):
     def __init__(self,ratio=0.1,dim=(64,64),n_split=1,):
@@ -13,16 +13,29 @@ class EarlyReader(object):
         seq_len=self.get_fraction(mean_size) 
         sample=data.imgs.MinLength(seq_len)
         def helper(seq_i):
-            start_i= self.get_fraction(len(seq_i))
-            start_seq_i=seq_i[:start_i]
+            if(self.ratio<0.99):
+                start_i= self.get_fraction(len(seq_i))
+                start_seq_i=seq_i[:start_i]
+            else:
+            	start_seq_i=seq_i
             final_seq_i=sample(start_seq_i)
             return final_seq_i
         frame_seqs.transform(helper,new=False,single=False)
+        frame_seqs.scale(self.dim)
         return frame_seqs
 
     def get_fraction(self,len_i):
         return int(np.ceil(len_i*self.ratio))
 
-in_path="../../2021_II/clean3/base/frames"
-read=EarlyReader()
-read(in_path)
+def single_exp(frame_path,out_path,n_epochs=100):
+    make_nn=tc_nn.TC_NN(n_hidden=100,batch=True)#,loss='mean_squared_error')
+    read=EarlyReader(ratio=1.0,dim=(64,64))
+    train=learn.Train(tc_nn.to_dataset,make_nn,read=read,batch_size=8)
+    extract=learn.Extract(make_nn,read)
+    files.make_dir(out_path)
+    nn_path,feath_path="%s/nn" % out_path,"%s/feats" % out_path
+    train(frame_path,nn_path,n_epochs=n_epochs)
+    extract(frame_path,nn_path,feath_path)
+
+frame_path="../../2021_II/clean3/base/frames"
+single_exp(frame_path,"early_test",n_epochs=5)
