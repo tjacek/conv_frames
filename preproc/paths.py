@@ -1,5 +1,6 @@
 import sys
 sys.path.append("..")
+import shutil
 import numpy as np
 import files
 
@@ -16,13 +17,28 @@ class Paths(dict):
     def min_len(self):
         return min(self.seqs_len())	
 
-    def supsample(self,size=100):
+    def sample(self,size=100):
         for name_i,frames_i in self.items():
             size_i=len(frames_i)
             replace_i= (size_i<size)  
             indexes=np.random.choice(range(size_i),size=size,replace=replace_i)
             indexes.sort()
             self[name_i]=[frames_i[j] for j in indexes ]
+
+    def save(self,out_path):
+        files.make_dir(out_path)
+        for name_i,frames_i in self.items():
+            new_dir_i="%s/%s" % (out_path,name_i.split("/")[-1])
+            new_dir_i=new_dir_i.replace(".._..","_")
+            files.make_dir(new_dir_i)
+            print(new_dir_i)
+            for path_j in frames_i:
+                path_j= path_j.replace(".._..","_")
+                print(path_j)
+                id_j="/".join(path_j.split("/")[-2:])
+                name_j="%s/%s" % (out_path,id_j)
+                print(name_j)
+                shutil.copy(path_j,name_j)
 
 def read_paths(in_path):
 	paths=Paths()
@@ -31,7 +47,10 @@ def read_paths(in_path):
 	return paths	
 
 in_path="../../../Downloads/AA/depth/depth_only"
+out_path="../../../Downloads/AA/depth/depth_sampled"
+
 paths=read_paths(in_path)
 #print(paths.max_len())
 #print(paths.min_len())
-paths.supsample()
+paths.sample()
+paths.save(out_path)
