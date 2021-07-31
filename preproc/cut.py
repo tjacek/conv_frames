@@ -4,7 +4,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import json,os.path
 import cv2,numpy as np
 from ast import literal_eval
-import gui, data.actions
+import gui, data.actions,data.imgs
 
 class ActionState(object):
     def __init__(self, actions_dict,train_data,train_path):
@@ -64,6 +64,16 @@ def cut_actions(in_path,train_path,out_path):
             new_actions[name_i]= train_data(name_i,action_i)
     new_actions.save(out_path)
 
+def cut_frames(in_path,train_path,out_path):
+    frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
+    train_data=TrainDec(read_train(train_path))
+    new_frames=data.imgs.FrameSeqs()
+    for name_i,seq_i in frame_seqs.items():
+        if(name_i in train_data):
+            new_seq_i=[ train_data(name_i,frame_i)  for frame_i in seq_i]
+            new_frames[name_i]=new_seq_i
+    new_frames.save(out_path) 
+
 def make_train(actions_dict):
     return {name_i:[0,0,0,0] for name_i in actions_dict.keys()}	
 
@@ -80,6 +90,8 @@ def make_action_state(in_path,train_path="train"):
 
 if __name__ == "__main__":
     in_path="../../../Downloads/AA/depth/actions"
-#    state=make_action_state(in_path)
-#    gui.gui_exp(state)
-    cut_actions(in_path,"train","actions")
+    state=make_action_state(in_path)
+    gui.gui_exp(state)
+#    cut_actions(in_path,"train","actions")
+#    in_path="../../../Downloads/AA/depth/rename"
+#    cut_frames(in_path,"train","frames")
