@@ -32,11 +32,13 @@ class Paths(dict):
             new_dir_i=new_dir_i.replace(".._..","_")
             files.make_dir(new_dir_i)
             print(new_dir_i)
-            for path_j in frames_i:
+            print(len(frames_i))
+            for j,path_j in enumerate(frames_i):
                 path_j= path_j.replace(".._..","_")
-                print(path_j)
-                id_j="/".join(path_j.split("/")[-2:])
-                name_j="%s/%s" % (out_path,id_j)
+#                print(path_j)
+#                id_j="/".join(path_j.split("/")[-2:])
+                id_j=path_j.split("/")[-2]
+                name_j="%s/%s/%d" % (out_path,id_j,j)
                 print(name_j)
                 shutil.copy(path_j,name_j)
 
@@ -46,11 +48,10 @@ def read_paths(in_path):
 	    paths[dir_i]=files.top_files(dir_i)
 	return paths	
 
-in_path="../../../Downloads/AA/depth/depth_only"
-out_path="../../../Downloads/AA/depth/depth_sampled"
-
-paths=read_paths(in_path)
-#print(paths.max_len())
-#print(paths.min_len())
-paths.sample()
-paths.save(out_path)
+if __name__ == "__main__":
+    in_path="../../../Downloads/AA/depth/depth_only"
+    out_path="../../../Downloads/AA/depth/depth_sampled"
+    paths=read_paths(in_path)
+    paths.sample()
+    print(paths.seqs_len())
+    paths.save(out_path)
