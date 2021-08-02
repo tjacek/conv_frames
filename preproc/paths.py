@@ -8,6 +8,8 @@ class Paths(dict):
     def __init__(self, arg=[]):
         super(Paths, self).__init__(arg)
 
+#    def __getitem__(self, p):
+
     def seqs_len(self):
         return [ len(path_i) for path_i in self.values()]	
 
@@ -35,8 +37,6 @@ class Paths(dict):
             print(len(frames_i))
             for j,path_j in enumerate(frames_i):
                 path_j= path_j.replace(".._..","_")
-#                print(path_j)
-#                id_j="/".join(path_j.split("/")[-2:])
                 id_j=path_j.split("/")[-2]
                 name_j="%s/%s/%d" % (out_path,id_j,j)
                 print(name_j)
@@ -48,10 +48,28 @@ def read_paths(in_path):
 	    paths[dir_i]=files.top_files(dir_i)
 	return paths	
 
-if __name__ == "__main__":
-    in_path="../../../Downloads/AA/depth/depth_only"
-    out_path="../../../Downloads/AA/depth/depth_sampled"
+def sample_exp(in_path,out_path):
     paths=read_paths(in_path)
     paths.sample()
     print(paths.seqs_len())
     paths.save(out_path)
+
+def dir_map(in_path):
+    return { get_name(path_i):path_i 
+            for path_i in files.top_files(in_path)}
+
+def get_name(path_i):
+    return path_i.split("/")[-1]
+
+
+if __name__ == "__main__":
+    in_path="../../3DHOI2/raw"
+    s_path="../../3DHOI/short4/frames"
+    out_path="../../3DHOI2/selected"
+    raw_paths=dir_map(in_path)
+    s_paths=read_paths(s_path)
+    for selected_i,data_i in s_paths.items():
+        name_i=get_name(selected_i)
+        raw_i=raw_paths[name_i]
+        print(selected_i)
+        print(raw_i)
