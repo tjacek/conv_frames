@@ -68,16 +68,18 @@ def ensemble_exp(frame_path,ens_path,n_epochs=5):
 def single_exp(in_path,out_path,n_epochs=100):
     paths=files.prepare_dirs(out_path,["nn","feats"])
     print(paths)
-    train,extract,read=make_single_exp()
+    read=ReadFrames(seq_len=50,dim=(64,64),agum=1)
+
+    train,extract=make_single_exp(read)
     train(in_path,paths["nn"],n_epochs=n_epochs)
     extract(in_path,paths["nn"],paths["feats"])
 
-def make_single_exp():
-    read=get_read(seq_len=20,dim=(64,64))
+def make_single_exp(read):
+#    read=get_read(seq_len=20,dim=(64,64))
     make_nn=TC_NN()
-    train=learn.Train(to_dataset,make_nn,read=read)
+    train=learn.Train(to_dataset,make_nn,read=read,batch_size=8)
     extract=learn.Extract(make_nn,read)
-    return train,extract,read
+    return train,extract#,read
 
 def to_dataset(frames):
     X,y=frames.to_dataset()
@@ -90,7 +92,8 @@ def read_model(frame_seq,nn_path,make_nn,params=None):
         params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
                 'n_cats':frame_seq.n_cats()}
     model=make_nn(params)
-    model.load_weights(nn_path)
+#    raise Exception(nn_path)
+    model.load_weights("%s/nn" % nn_path)
     return model
 
 def save(model,out_path):
@@ -98,5 +101,6 @@ def save(model,out_path):
         model.save_weights(out_path)
 
 if __name__ == "__main__":
-    in_path="../MSR/frames"
-    ensemble_exp(in_path,"ens",n_epochs=5)
+    in_path="../3DHOI2/wall6/frames"
+    out_path="../3DHOI2/wall6/clf3"
+    single_exp(in_path,out_path,n_epochs=25)
