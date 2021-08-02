@@ -57,23 +57,23 @@ def cut_frames(in_path,train_path,out_path,cut_fun):
     new_frames=data.imgs.FrameSeqs()
     for name_i,seq_i in frame_seqs.items():
         if(name_i in train_data):
-            new_seq_i=[ train_data(name_i,frame_i)  for frame_i in seq_i]
-            new_frames[name_i]=new_seq_i
+            seq_i=[ train_data(name_i,frame_i)  for frame_i in seq_i]
+        new_frames[name_i]=seq_i
     new_frames.save(out_path) 
 
-def make_train(actions_dict):
-    return {name_i:[0,0,0,0] for name_i in actions_dict.keys()}	
+def make_train(actions_dict,default_value):
+    return {name_i:default_value for name_i in actions_dict.keys()}	
 
 def read_train(train_path):
     return json.load(open(train_path))
 
-def make_action_state(in_path,train_path="train",cut_fun=None):
+def make_action_state(in_path,train_path="train",cut_fun=None,default_value=None):
     actions_dict=data.actions.read_actions(in_path)
     if(os.path.isfile(train_path)):
         train_data=read_train(train_path)#json.load(open(train_path))
     else:
-        train_data=make_train(actions_dict)
-    return ActionState(actions_dict,train_data,train_path)
+        train_data=make_train(actions_dict,default_value)
+    return ActionState(actions_dict,train_data,train_path,cut_fun)
 
 if __name__ == "__main__":
     in_path="../../../Downloads/AA/depth/actions"
