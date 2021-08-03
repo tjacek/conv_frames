@@ -25,6 +25,7 @@ if __name__ == "__main__":
     in_path="actions"
 #    state=make_wall_state(in_path)
 #    gui.gui_exp(state)
-    in_path="../../3DHOI2/frames"
-    out_path="../../3DHOI2/wall/frames"
-    cut_frames(in_path,out_path,train_path="train_wall")
+    in_path="../../3DHOI2/selected"
+    out_path="../../3DHOI2/wall"
+    train_path="../../3DHOI2/train_wall"
+    cut_frames(in_path,out_path,train_path)

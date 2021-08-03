@@ -1,4 +1,5 @@
-import cut
+import numpy as np
+import cut,gui,files
 
 class ReactState(cut.ActionState):
 	def __init__(self, actions_dict,train_data,train_path,cut):
@@ -22,5 +23,19 @@ def true_cut(img_i,position_i):
     x1,y1=x0+position_i[2],y0+position_i[3]     
     return img_i[x0:x1,y0:y1]
 
-def make_react_state(in_path,train_path="train"):
-    cut.make_action_state(in_path,train_path,cut_fun=cut_rect)
+def make_rect_state(in_path,train_path="train_rect"):
+    return cut.make_action_state(in_path,train_path,cut_fun=cut_rect)
+
+def cut_frames(in_path,out_path,train_path="train_rect"):
+    cut.cut_frames(in_path,train_path,out_path,true_cut)
+
+if __name__ == "__main__":
+    in_path="actions"
+#    state=make_rect_state(in_path,train_path="train_rect")
+#    gui.gui_exp(state)
+    in_path="../../3DHOI2/wall"
+    out_path="../../3DHOI2/try3"
+    files.make_dir(out_path)
+    train_path="train_rect"
+    out_path="%s/frames" % out_path
+    cut_frames(in_path,out_path,train_path)
