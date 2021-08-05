@@ -29,13 +29,19 @@ def make_rect_state(in_path,train_path="train_rect"):
 def cut_frames(in_path,out_path,train_path="train_rect"):
     cut.cut_frames(in_path,train_path,out_path,true_cut)
 
-if __name__ == "__main__":
-    in_path="actions"
-#    state=make_rect_state(in_path,train_path="train_rect")
-#    gui.gui_exp(state)
-    in_path="../../3DHOI2/wall"
-    out_path="../../3DHOI2/try3"
+def make_exp(in_path,train_path="train_rect"):
+    state=make_rect_state(in_path,train_path)
+    gui.gui_exp(state)
+
+def do_exp(in_path,out_path,train_path="train_rect"):
     files.make_dir(out_path)
-    train_path="train_rect"
     out_path="%s/frames" % out_path
     cut_frames(in_path,out_path,train_path)
+
+if __name__ == "__main__":
+    in_path="actions"
+    train_path="train_rect"
+    in_path="../../3DHOI2/wall"
+    out_path="../../3DHOI2/try6"
+    make_exp(in_path,train_path="train_rect")
+    do_exp(in_path,out_path,train_path)
