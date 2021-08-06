@@ -1,9 +1,5 @@
 import numpy as np
 import cut,gui,files
-
-class ReactState(cut.ActionState):
-	def __init__(self, actions_dict,train_data,train_path,cut):
-		super(ReactState, self).__init__( actions_dict,train_data,train_path,cut_rect)
 		
 def cut_rect(img_i,position):
 	if(np.product(position)==0):
@@ -41,7 +37,7 @@ def do_exp(in_path,out_path,train_path="train_rect"):
 if __name__ == "__main__":
     in_path="actions"
     train_path="train_rect"
-    in_path="../../3DHOI2/wall"
-    out_path="../../3DHOI2/try6"
-    make_exp(in_path,train_path="train_rect")
+    in_path="../../3DHOI2/raw"
+    out_path="../../3DHOI3/full"
+#    make_exp(in_path,train_path="train_rect")
     do_exp(in_path,out_path,train_path)
