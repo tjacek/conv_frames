@@ -5,7 +5,7 @@ import tc_nn,learn,files,ens
 class TrainStudent(object):
     def __init__(self,read=None,make_tcn=None,batch_size=16):
         if(read is None):
-            read=tc_nn.ReadFrames(seq_len=20,dim=(64,64))
+            read=tc_nn.SimpleRead(dim=(64,64))
         if(make_tcn is None):
             make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
         self.read=read
@@ -27,16 +27,25 @@ class TrainStudent(object):
         frame_seq=frame_seq.split()[0]
         teacher_feat=data.feats.read_feats(teacher_path)
         teacher_feat=teacher_feat.split()[0]
-        if(not self.read.use_agum()):
-            new_teacher_feat= data.feats.Feats()
-            for name_i in frame_seq.keys():
-                if(not name_i in teacher_feat):
-                    id_i=name_i.sub_seq(3)
-                    new_teacher_feat[name_i]=teacher_feat[id_i]
-            teacher_feat=new_teacher_feat
         params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
-                'n_cats': teacher_feat.dim() }
+                    'n_cats': teacher_feat.dim() }
         return frame_seq,teacher_feat,params
+
+#    def read_data(self,frame_path,teacher_path):
+#        frame_seq=self.read(frame_path)
+#        frame_seq=frame_seq.split()[0]
+#        teacher_feat=data.feats.read_feats(teacher_path)
+#        teacher_feat=teacher_feat.split()[0]
+#        if(not self.read.use_agum()):
+#            new_teacher_feat= data.feats.Feats()
+#            for name_i in frame_seq.keys():
+#                if(not name_i in teacher_feat):
+#                    id_i=name_i.sub_seq(3)
+#                    new_teacher_feat[name_i]=teacher_feat[id_i]
+#            teacher_feat=new_teacher_feat
+#        params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
+#                'n_cats': teacher_feat.dim() }
+#        return frame_seq,teacher_feat,params
 
 class ExtractStudent(object):
     def __init__(self,read=None, make_tcn=None):
@@ -52,7 +61,7 @@ class ExtractStudent(object):
         frame_seq=self.read(frame_path)
         params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
                 'n_cats':n_cats}
-        model=tc_nn.read_model(frame_seq,"%s/nn" %nn_path,self.make_tcn,params)
+        model=tc_nn.read_model(frame_seq,nn_path,self.make_tcn,params)
         model.summary()
         X,y=frame_seq.to_dataset()
         feats=learn.get_features(frame_seq,model)
@@ -68,10 +77,12 @@ def flip_agum(frame_seqs,teacher_feat):
     return frame_seqs,teacher_feat
 
 def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
+    files.make_dir(nn_path)
     make_tcn=tc_nn.TC_NN(n_hidden=200,batch=True,loss='mean_squared_error')
-    read=tc_nn.ReadFrames(seq_len=30,dim=(64,64),agum=2)
-    train,extract=TrainStudent(read,make_tcn),ExtractStudent(read,make_tcn)
-    n_cats=train(frame_path,teacher_path,nn_path,n_epochs=100)
+    read=None#tc_nn.ReadFrames(seq_len=30,dim=(64,64),agum=2)
+    train=TrainStudent(read,make_tcn,batch_size=8)
+    extract=ExtractStudent(read,make_tcn)
+    n_cats=train(frame_path,teacher_path,nn_path,n_epochs)
     np.set_printoptions(threshold=n_cats)
     extract(frame_path,nn_path,"%s/feats" % nn_path,n_cats)
 
@@ -88,10 +99,8 @@ def ens_student(frame_path,student_path,out_path,n_epochs=5):
     args={"n_epochs":n_epochs,"n_cats":100,"frame":frame_path}
     ensemble(input_paths,out_path, arg_dict=args)
 
-frame_path="../3DHOI/frames"
-#teacher_path="../3DHOI/1D_CNN/feats"
-teacher_path="../conv_frames/student/ae_30_200/res"
-#nn_path="student/ae_30_200_agum"
-nn_path="../conv_frames/student/ae_30_200/next"
-single_student(frame_path,teacher_path,nn_path,n_epochs=100)
+frame_path="../3DHOI3/full2/frames"
+teacher_path="../ml_utils/3DHOI"
+nn_path="test"
+single_student(frame_path,teacher_path,nn_path,n_epochs=5)
 #ens_student(frame_path,"test/simple_feats","student_ens_30",n_epochs=100)

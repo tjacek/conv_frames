@@ -33,6 +33,16 @@ class ReadFrames(object):
     def __str__(self):
         return "%d,%s,%d,%d" % (self.seq_len,str(self.dim),self.n_split,self.agum)
 
+class SimpleRead(object):
+    def __init__(self,dim=(64,64),n_split=1):
+        self.dim=dim
+        self.n_split=n_split
+
+    def __call__(self,in_path):
+        frame_seq=data.imgs.read_frame_seqs(in_path,n_split=self.n_split)
+        frame_seq.scale(self.dim)
+        return frame_seq
+
 class TC_NN(object):
     def __init__(self,n_hidden=100,loss='binary_crossentropy',batch=True,
         n_kern=[64,64,64]):
@@ -77,7 +87,7 @@ def single_exp(in_path,out_path,n_epochs=100):
 def make_single_exp(read):
 #    read=get_read(seq_len=20,dim=(64,64))
     make_nn=TC_NN()
-    train=learn.Train(to_dataset,make_nn,read=read,batch_size=8)
+    train=learn.Train(to_dataset,make_nn,read=read,batch_size=16)
     extract=learn.Extract(make_nn,read)
     return train,extract#,read
 
@@ -101,6 +111,6 @@ def save(model,out_path):
         model.save_weights(out_path)
 
 if __name__ == "__main__":
-    in_path="../3DHOI2/wall6/frames"
-    out_path="../3DHOI2/wall6/clf3"
+    in_path="../3DHOI2/try6/agum"
+    out_path="../3DHOI2/try6/clf2"
     single_exp(in_path,out_path,n_epochs=25)
