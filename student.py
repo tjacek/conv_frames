@@ -27,25 +27,17 @@ class TrainStudent(object):
         frame_seq=frame_seq.split()[0]
         teacher_feat=data.feats.read_feats(teacher_path)
         teacher_feat=teacher_feat.split()[0]
+        if(len(teacher_feat)!=len(frame_seq)):
+            new_teacher_feat= data.feats.Feats()
+            for name_i in frame_seq.keys():
+                if(not name_i in new_teacher_feat):
+                    print(name_i)
+                    id_i=name_i.sub_seq(3)
+                    new_teacher_feat[name_i]=teacher_feat[id_i]
+            teacher_feat=new_teacher_feat
         params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
                     'n_cats': teacher_feat.dim() }
         return frame_seq,teacher_feat,params
-
-#    def read_data(self,frame_path,teacher_path):
-#        frame_seq=self.read(frame_path)
-#        frame_seq=frame_seq.split()[0]
-#        teacher_feat=data.feats.read_feats(teacher_path)
-#        teacher_feat=teacher_feat.split()[0]
-#        if(not self.read.use_agum()):
-#            new_teacher_feat= data.feats.Feats()
-#            for name_i in frame_seq.keys():
-#                if(not name_i in teacher_feat):
-#                    id_i=name_i.sub_seq(3)
-#                    new_teacher_feat[name_i]=teacher_feat[id_i]
-#            teacher_feat=new_teacher_feat
-#        params={'seq_len':frame_seq.min_len(),'dims':frame_seq.dims(),
-#                'n_cats': teacher_feat.dim() }
-#        return frame_seq,teacher_feat,params
 
 class ExtractStudent(object):
     def __init__(self,read=None, make_tcn=None):
@@ -99,8 +91,8 @@ def ens_student(frame_path,student_path,out_path,n_epochs=5):
     args={"n_epochs":n_epochs,"n_cats":100,"frame":frame_path}
     ensemble(input_paths,out_path, arg_dict=args)
 
-frame_path="../3DHOI3/full2/frames"
+frame_path="../3DHOI3/full2/agum"
 teacher_path="../ml_utils/3DHOI"
-nn_path="test"
+nn_path="agum"
 single_student(frame_path,teacher_path,nn_path,n_epochs=5)
 #ens_student(frame_path,"test/simple_feats","student_ens_30",n_epochs=100)
