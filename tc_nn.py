@@ -34,12 +34,15 @@ class ReadFrames(object):
         return "%d,%s,%d,%d" % (self.seq_len,str(self.dim),self.n_split,self.agum)
 
 class SimpleRead(object):
-    def __init__(self,dim=(64,64),n_split=1):
+    def __init__(self,dim=(64,64),n_split=1,preproc=None):
         self.dim=dim
         self.n_split=n_split
+        self.preproc=preproc
 
     def __call__(self,in_path):
         frame_seq=data.imgs.read_frame_seqs(in_path,n_split=self.n_split)
+        if(self.preproc):
+            frame_seq.transform(self.preproc,new=False,single=False)
         frame_seq.scale(self.dim)
         return frame_seq
 

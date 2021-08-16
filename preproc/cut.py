@@ -72,6 +72,7 @@ def make_action_state(in_path,train_path="train",cut_fun=None,default_value=None
     if(os.path.isfile(train_path)):
         train_data=read_train(train_path)#json.load(open(train_path))
     else:
+        print("make new train dataset %s" % train_path)
         train_data=make_train(actions_dict,default_value)
     return ActionState(actions_dict,train_data,train_path,cut_fun)
 

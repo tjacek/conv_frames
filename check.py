@@ -2,7 +2,6 @@ import numpy as np
 from collections import defaultdict
 import data.imgs
 
-
 def seq_len(in_path):
     frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
     cats=by_cat(frame_seqs)
@@ -18,6 +17,12 @@ def by_cat(frame_seqs):
         name_id[name_i.get_cat()].append(name_i)
     return name_id	
 
+def split_size(in_path):
+    frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
+    train,test=frame_seqs.split()
+    print("train:%d" % len(train))
+    print("test:%d" % len(test))
 
-in_path="../../2021_II/clean3/base/frames"
-seq_len(in_path)
+in_path="../3DHOI2/try2/frames"
+in_path="../3DHOI2/raw"
+split_size(in_path)

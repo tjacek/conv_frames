@@ -70,8 +70,8 @@ def flip_agum(frame_seqs,teacher_feat):
 
 def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
     files.make_dir(nn_path)
-    make_tcn=tc_nn.TC_NN(n_hidden=200,batch=True,loss='mean_squared_error')
-    read=None#tc_nn.ReadFrames(seq_len=30,dim=(64,64),agum=2)
+    make_tcn=tc_nn.TC_NN(n_hidden=200,batch=True,loss='binary_crossentropy')#,loss='mean_squared_error')
+    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
     train=TrainStudent(read,make_tcn,batch_size=8)
     extract=ExtractStudent(read,make_tcn)
     n_cats=train(frame_path,teacher_path,nn_path,n_epochs)
@@ -80,7 +80,7 @@ def single_student(frame_path,teacher_path,nn_path,n_epochs=100):
 
 def ens_student(frame_path,student_path,out_path,n_epochs=5):
     read=tc_nn.ReadFrames(seq_len=30,dim=(64,64),agum=2)
-    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='mean_squared_error')
+    make_tcn=tc_nn.TC_NN(n_hidden=100,batch=True,loss='binary_crossentropy')#loss='mean_squared_error')
     train,extract=TrainStudent(read,make_tcn),ExtractStudent(read,make_tcn)
     funcs=[[train,[ "frame","teacher","nn","n_epochs"]],
            [extract,[ "frame","nn","feats","n_cats"]]]
@@ -91,8 +91,8 @@ def ens_student(frame_path,student_path,out_path,n_epochs=5):
     args={"n_epochs":n_epochs,"n_cats":100,"frame":frame_path}
     ensemble(input_paths,out_path, arg_dict=args)
 
-frame_path="../3DHOI3/full2/agum"
+frame_path="../3DHOI3/full3/agum"
 teacher_path="../ml_utils/3DHOI"
-nn_path="agum"
+nn_path="agum_64x128"
 single_student(frame_path,teacher_path,nn_path,n_epochs=5)
 #ens_student(frame_path,"test/simple_feats","student_ens_30",n_epochs=100)

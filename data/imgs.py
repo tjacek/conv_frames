@@ -103,12 +103,13 @@ class MinLength(object):
         indexes=np.sort(indexes)
         return [frames[i] for i in indexes]
 
-class ReadFrames(object):
-    def __init__(self,n_split=1):
-        self.n_split=n_split
+class Downsample(object):
+    def __init__(self,n=2):
+        self.n=n 
 
-    def __call__(self,in_path):
-        return read_frame_seqs(in_path,n_split=self.n_split)
+    def __call__(self,frames):
+        return [frame_i for i,frame_i in enumerate(frames)
+                    if((i%self.n)==0)]
 
 def read_frame_seqs(in_path,n_split=1):
     frame_seqs=FrameSeqs()
