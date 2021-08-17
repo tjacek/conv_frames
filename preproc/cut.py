@@ -8,6 +8,7 @@ import gui, data.actions,data.imgs
 
 class ActionState(object):
     def __init__(self, actions_dict,train_data,train_path,cut_fun):
+        validate_datasets(actions_dict,train_data)
         self.actions_dict=actions_dict
         self.path=train_path
         self.train_data=train_data
@@ -41,6 +42,14 @@ class TrainDec(object):
     def __call__(self,name_i,img_i):
         position_i=self.data[name_i]
         return self.cut_fun(img_i,position_i)
+
+def validate_datasets(actions,train_data):
+    action_set= set(actions.keys())
+    train_set= set(train_data.keys())
+    train=action_set.difference(train_set)
+    action=train_set.difference(action_set)
+    if( len(action)==0 or len(train)==0):
+        raise Exception("action:%s\ntrain:%s" % (str(action),str(train)))
 
 def cut_actions(in_path,train_path,out_path,cut_fun):
     actions_dict=data.actions.read_actions(in_path)
@@ -79,7 +88,7 @@ def make_action_state(in_path,train_path="train",cut_fun=None,default_value=None
 if __name__ == "__main__":
     in_path="../../../Downloads/AA/depth/actions"
     state=make_action_state(in_path)
-    gui.gui_exp(state)
-#    cut_actions(in_path,"train","actions")
+#    gui.gui_exp(state)
+    cut_actions(in_path,"train","actions")
 #    in_path="../../../Downloads/AA/depth/rename"
 #    cut_frames(in_path,"train","frames")

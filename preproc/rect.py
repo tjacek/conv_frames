@@ -35,9 +35,10 @@ def do_exp(in_path,out_path,train_path="train_rect"):
     cut_frames(in_path,out_path,train_path)
 
 if __name__ == "__main__":
-    in_path="actions"
+    action_path="actions"
     train_path="train_rect"
-    in_path="../../3DHOI2/raw"
-    out_path="../../3DHOI3/full"
-#    make_exp(in_path,train_path="train_rect")
-    do_exp(in_path,out_path,train_path)
+    in_path="../../3DHOI2/wall"
+    out_path="../../3DHOI3/full4"
+    make_exp(action_path,train_path="train_rect")
+#    files.make_dir(out_path)
+#    do_exp(in_path,out_path,train_path)
