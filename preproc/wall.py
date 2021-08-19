@@ -23,13 +23,13 @@ def make_exp(in_path,train_path="train_wall"):
 
 def do_exp(in_path,out_path,train_path="train_wall"):
     files.make_dir(out_path)
-    out_path="%s/frames" % out_path
+    out_path="%s/wall" % out_path
     cut_frames(in_path,out_path,train_path)
 
 if __name__ == "__main__":
     in_path="actions"
 #    make_exp(in_path,train_path="train_wall")
-    in_path="../../3DHOI3/full/frames"
-    out_path="../../3DHOI3/full2"
+    in_path="../../3DHOI2/raw/"
+    out_path="../../3DHOI4/B"
     train_path="train_wall"
     do_exp(in_path,out_path,train_path)

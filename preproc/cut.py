@@ -48,7 +48,7 @@ def validate_datasets(actions,train_data):
     train_set= set(train_data.keys())
     train=action_set.difference(train_set)
     action=train_set.difference(action_set)
-    if( len(action)==0 or len(train)==0):
+    if( len(action)!=0 or len(train)!=0):
         raise Exception("action:%s\ntrain:%s" % (str(action),str(train)))
 
 def cut_actions(in_path,train_path,out_path,cut_fun):
@@ -62,7 +62,9 @@ def cut_actions(in_path,train_path,out_path,cut_fun):
 
 def cut_frames(in_path,train_path,out_path,cut_fun):
     frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
-    train_data=TrainDec(read_train(train_path),cut_fun)
+    train_dict=read_train(train_path)
+    validate_datasets(frame_seqs,train_dict)
+    train_data=TrainDec(train_dict,cut_fun)
     new_frames=data.imgs.FrameSeqs()
     for name_i,seq_i in frame_seqs.items():
         if(name_i in train_data):
