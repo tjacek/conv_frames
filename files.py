@@ -65,3 +65,8 @@ def prepare_dirs(basic_path,sub_dirs):
     make_dir(basic_path)
     paths=get_paths(basic_path,sub_dirs)
     return paths
+
+def ens_paths(dir_path,common_path,binary_path):
+    binary="%s/%s" % (dir_path,binary_path)
+    common=["%s/%s" % (dir_path,path_i) for path_i in common_path]
+    return {"common":common ,"binary":binary}
