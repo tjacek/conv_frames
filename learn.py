@@ -25,9 +25,9 @@ class Train(object):
         self.save(model,out_path)
 
 class Extract(object):
-    def __init__(self,make_nn,read=None,read_model=None,name="hidden"):
+    def __init__(self,read=None,read_model=None,name="hidden"):
         self.read=read
-        self.make_nn=make_nn
+#        self.make_nn=make_nn
         self.name=name
         if(read_model is None):
             read_model=base_read_model

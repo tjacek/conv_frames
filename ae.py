@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Input, Dense,Conv2D,Reshape,Conv2DTranspose
 from tensorflow.keras.layers import Flatten,MaxPooling2D,UpSampling2D
 from keras import regularizers
 import tc_nn
-import data.imgs
+import data.imgs,data.seqs,learn
 
 class Autoencoder(object):
     def __init__(self,n_hidden=100):
@@ -41,18 +41,43 @@ class Autoencoder(object):
         autoencoder.summary()
         return autoencoder,recon
 
-def train_ae(in_path):
+def train_ae(in_path,out_path,n_batch=16):
     read=tc_nn.SimpleRead(dim=(64,64),preproc=data.imgs.Downsample())
     seq_dict=read(in_path)
     train=seq_dict.split()[0]
-    X=[]
-    for seq_i in train.values():
-        X+=seq_i	
-    X=np.array(X)
-    params={ 'n_channels':1,"dims":train.dims()}
+    X,params=to_dataset(train,8)
     make_ae=Autoencoder()
     model=make_ae(params)[0]
-    model.fit(X,X,epochs=5,batch_size=16)
+    model.fit(X,X,epochs=5,batch_size=n_batch)
+    model.save(out_path)
+
+def extract_ae(in_path,nn_path,out_path):
+    read=tc_nn.SimpleRead(dim=(64,64),preproc=data.imgs.Downsample())
+    frame_dict=read(in_path)
+    model=learn.base_read_model(frame_dict,nn_path)
+    extractor=learn.get_extractor(model,"hidden")
+    def helper(img_i):
+        img_i=np.array(img_i)
+        img_i=img_i.astype('f8')        
+        feat_i=extractor.predict(img_i)
+        return feat_i
+    seq_dict=frame_dict.transform(helper,new=True,single=False)
+    seq_dict=data.seqs.Seqs(seq_dict)
+    seq_dict.save(out_path)
+
+def to_dataset(train,fraction=2):
+    X=[]
+    for seq_i in train.values():
+        X+=seq_i    
+    if(fraction):
+        X=[x_j for j,x_j in enumerate( X)
+              if( (j%fraction)==0)]
+    X=np.array(X)
+    params={ 'n_channels':1,"dims":train.dims()}
+    return X,params
+
+
 
 in_path="../best2/frames"
-train_ae(in_path)
+#train_ae(in_path,"test_ae")
+extract_ae(in_path,"test_ae","seqs")
