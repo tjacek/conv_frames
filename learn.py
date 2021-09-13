@@ -27,7 +27,6 @@ class Train(object):
 class Extract(object):
     def __init__(self,read=None,read_model=None,name="hidden"):
         self.read=read
-#        self.make_nn=make_nn
         self.name=name
         if(read_model is None):
             read_model=base_read_model
@@ -40,6 +39,20 @@ class Extract(object):
         extractor=get_extractor(model,self.name)
         feats=get_features(frame_seq,extractor)
         feats.save(out_path)
+
+class SimTrain(object):
+    def __init__(self,read,make_nn):
+        self.read=read
+        self.make_nn=make_nn
+
+    def __call__(self,data_dict,out_path,n_epochs=5):
+        if(type(data_dict)==str):
+            data_dict=self.read(data_dict ) 
+        train,test=data_dict.split()
+        X,y=pair_dataset(train)
+        params={"n_cats": max(y)+1, "input_shape":(None,*train.dims())}
+        self.make_nn(params)
+        print(X[0][0].shape)
 
 def get_features(frame_seq,extractor):
     feats=data.feats.Feats()
@@ -67,3 +80,15 @@ def to_one_hot(y,n_cats=20):
     for i,y_i in enumerate(y):
         one_hot[i,y_i]=1
     return one_hot
+
+def pair_dataset(train):
+    names=list(train.keys())
+    X,y=[],[]
+    for i,name_i in enumerate( names):
+        for name_j in names[i:]:
+            X.append((train[name_i],train[name_j]))
+            y.append(all_cat(name_i,name_j))
+    return X,y
+
+def all_cat(name_i,name_j):
+    return int(name_i.get_cat()==name_j.get_cat())

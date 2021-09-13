@@ -2,16 +2,16 @@ from keras.layers import Conv2D,Conv1D, MaxPooling1D,MaxPooling2D
 from keras.layers import Dropout,Flatten,Dense
 from keras import regularizers
 
-def add_conv_layer(input_img,n_kerns,kern_size,
-                    pool_size,activ='relu',one_dim=False):
-    x=input_img
+def add_conv_layer(model,n_kerns,kern_size,pool_size,
+                    input,activ='relu',one_dim=False):
+
     Conv=Conv1D if(one_dim) else Conv2D
     MaxPooling=MaxPooling1D if(one_dim) else MaxPooling2D
     for i,n_kern_i in enumerate(n_kerns):
         print(i)
-        x=Conv(n_kern_i, kernel_size=kern_size[i],activation=activ,name='conv%d'%i)(x)
-        x=MaxPooling(pool_size=pool_size[i],name='pool%d' % i)(x)
-    return x
+        model.add(Conv(filters=n_kern_i, kernel_size=kern_size[i],activation=activ,name='conv%d'%i))
+        model.add(MaxPooling(pool_size=pool_size[i],name='pool%d' % i))
+    return model
 
 def full_layer(x,size=100,l1=0.01,dropout=0.5,activ='relu'):
     x=Flatten()(x)
