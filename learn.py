@@ -51,8 +51,10 @@ class SimTrain(object):
         train,test=data_dict.split()
         X,y=pair_dataset(train)
         params={"n_cats": max(y)+1, "input_shape":(None,*train.dims())}
-        self.make_nn(params)
-        print(X[0][0].shape)
+        model,extractor=self.make_nn(params)
+        model.fit(X,y,epochs=n_epochs)
+        if(out_path):
+            extractor.save(out_path)
 
 def get_features(frame_seq,extractor):
     feats=data.feats.Feats()
@@ -88,6 +90,8 @@ def pair_dataset(train):
         for name_j in names[i:]:
             X.append((train[name_i],train[name_j]))
             y.append(all_cat(name_i,name_j))
+    X=np.array(X)
+    X=[X[:,0],X[:,1]]
     return X,y
 
 def all_cat(name_i,name_j):

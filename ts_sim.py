@@ -24,7 +24,7 @@ class TS_SIM(object):
         model = Model(inputs=[img_a, img_b], outputs=distance)
         model.compile(loss=contrastive_loss, optimizer="adam")
         feature_extractor.summary()
-        return model
+        return model,feature_extractor
 
     def build_model(self,input_shape):
         inputs = Input(input_shape)
@@ -54,4 +54,10 @@ def train_sim(in_path,out_path,n_epochs=5):
     train=learn.SimTrain(read,make_nn)#,read,batch_size=16)
     train(in_path,out_path,n_epochs)
 
-train_sim("seqs","test")
+def extractor(frame_seq,nn_path,out_path):
+    read=data.seqs.read_seqs
+    extractor=learn.Extract(read)
+    extractor(frame_seq,nn_path,out_path)
+
+#train_sim("seqs","test")
+extractor("seqs","test","feats")
