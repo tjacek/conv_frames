@@ -9,7 +9,7 @@ class TS_SIM(object):
     def __init__(self,n_hidden=100,activ='relu'):
         self.activ=activ
         self.n_hidden=n_hidden
-        self.n_kerns=[32,32]
+        self.n_kerns=[64,64]
         self.kern_size=[8,8]
         self.pool_size=[2,2]
 
@@ -59,5 +59,12 @@ def extractor(frame_seq,nn_path,out_path):
     extractor=learn.Extract(read)
     extractor(frame_seq,nn_path,out_path)
 
-#train_sim("seqs","test")
-extractor("seqs","test","feats")
+def sim_exp(in_path,n_epochs=100):
+    seq_path="%s/seqs" % in_path
+    model_path="%s/model" % in_path
+    feat_path="%s/feats" % in_path
+    train_sim(seq_path,model_path,n_epochs)
+    extractor(seq_path,model_path,feat_path)
+
+in_path="../best2/3_layers"
+sim_exp(in_path,n_epochs=100)
