@@ -82,17 +82,3 @@ def to_one_hot(y,n_cats=20):
     for i,y_i in enumerate(y):
         one_hot[i,y_i]=1
     return one_hot
-
-def pair_dataset(train):
-    names=list(train.keys())
-    X,y=[],[]
-    for i,name_i in enumerate( names):
-        for name_j in names[i:]:
-            X.append((train[name_i],train[name_j]))
-            y.append(all_cat(name_i,name_j))
-    X=np.array(X)
-    X=[X[:,0],X[:,1]]
-    return X,y
-
-def all_cat(name_i,name_j):
-    return int(name_i.get_cat()==name_j.get_cat())

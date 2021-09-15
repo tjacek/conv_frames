@@ -36,18 +36,6 @@ class TS_SIM(object):
         model = Model(inputs, x)
         return model
 
-def euclidean_distance(vectors):
-    (feats_a, feats_b) = vectors
-    sum_squared = K.sum(K.square(feats_a-feats_b), axis=1,keepdims=True)
-    return K.sqrt(K.maximum(sum_squared, K.epsilon()))
-
-def contrastive_loss(y, preds, margin=1):
-    y = tf.cast(y, preds.dtype)
-    squaredPreds = K.square(preds)
-    squaredMargin = K.square(K.maximum(margin - preds, 0))
-    loss = K.mean(y * squaredPreds + (1 - y) * squaredMargin)
-    return loss
-
 def train_sim(in_path,out_path,n_epochs=5):
     make_nn=TS_SIM()
     read=data.seqs.read_seqs
