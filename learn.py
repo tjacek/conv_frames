@@ -65,6 +65,7 @@ def get_features(frame_seq,extractor):
     return feats
    
 def base_read_model(frame_seq,nn_path):
+#    raise Exception(nn_path)
     return tensorflow.keras.models.load_model(nn_path)
 
 def base_save_model(model,out_path):
