@@ -68,12 +68,21 @@ def extract_ae(in_path,nn_path,out_path):
     extractor=learn.get_extractor(model,"hidden")
     def helper(img_i):
         img_i=np.array(img_i)
-#        img_i=img_i.astype('f8')        
         feat_i=extractor.predict(img_i)
         return feat_i
     seq_dict=frame_dict.transform(helper,new=True,single=False)
     seq_dict=data.seqs.Seqs(seq_dict)
     seq_dict.save(out_path)
+
+def reconstruct(in_path,nn_path,out_path):
+    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
+    frame_dict=read(in_path)
+    model=learn.base_read_model(frame_dict,nn_path)
+    def helper(img_i):
+        img_i=np.array(img_i)#,axis=-1)
+        return model.predict(img_i)
+    frame_dict=frame_dict.transform(helper,new=True,single=False)
+    frame_dict.save(out_path)
 
 def to_dataset(train,fraction=2):
     X=[]
@@ -100,5 +109,5 @@ def ae_exp(frame_path,out_path,n_epochs=2):
 
 frame_path="../best2/frames"
 out_path="../best2/3_layers"
-ae_exp(frame_path,out_path,n_epochs=5)
-#test_read(frame_path,"frames")
+#ae_exp(frame_path,out_path,n_epochs=35)
+reconstruct(frame_path,"%s/ae" % out_path,"recon")
