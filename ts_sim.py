@@ -1,9 +1,9 @@
 import tensorflow as tf
 import tensorflow.keras.backend as K
 import tensorflow.keras as keras
-from tensorflow.keras.layers import Input,Dense,Flatten,Lambda
+from tensorflow.keras.layers import Input,Dense,Flatten
 from tensorflow.keras.models import Model
-import learn,data.seqs,deep
+import learn,data.seqs,deep,sim_core
 
 class TS_SIM(object):
     def __init__(self,n_hidden=100,activ='relu'):
@@ -15,14 +15,8 @@ class TS_SIM(object):
 
     def __call__(self,params):
         input_shape=params["input_shape"][1:]
-        img_a = Input(shape=input_shape)
-        img_b = Input(shape=input_shape)
-        feature_extractor = self.build_model(input_shape)
-        feats_a = feature_extractor(img_a)
-        feats_b = feature_extractor(img_b)
-        distance = Lambda(euclidean_distance)([feats_a, feats_b])
-        model = Model(inputs=[img_a, img_b], outputs=distance)
-        model.compile(loss=contrastive_loss, optimizer="adam")
+        model=sim_core.sim_template(input_shape,self)
+        model.compile(loss=sim_core.contrastive_loss, optimizer="adam")
         feature_extractor.summary()
         return model,feature_extractor
 

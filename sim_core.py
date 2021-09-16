@@ -1,7 +1,8 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.keras.backend as K
-from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import Input,Lambda
+from tensorflow.keras.models import Model
 
 def pair_dataset(data_dict):
     names=list(data_dict.keys())
@@ -16,6 +17,15 @@ def pair_dataset(data_dict):
 
 def all_cat(name_i,name_j):
     return int(name_i.get_cat()==name_j.get_cat())
+
+def sim_template(input_shape,builder):
+    img_a = Input(shape=input_shape)
+    img_b = Input(shape=input_shape)
+    feature_extractor = self.build_model(input_shape)
+    feats_a = feature_extractor(img_a)
+    feats_b = feature_extractor(img_b)
+    distance = distance_layer(feats_a,feats_b)
+    model = Model(inputs=[img_a, img_b], outputs=distance)
 
 def distance_layer(feats_a,feats_b):
     return Lambda(euclidean_distance)([feats_a, feats_b])

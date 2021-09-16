@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow.keras
 from tensorflow.keras import Input, Model
-import data.feats
+import data.feats,sim_core
 
 class Train(object):
     def __init__(self,to_dataset,make_nn,read=None,save_model=None,batch_size=16):
@@ -49,7 +49,7 @@ class SimTrain(object):
         if(type(data_dict)==str):
             data_dict=self.read(data_dict ) 
         train,test=data_dict.split()
-        X,y=pair_dataset(train)
+        X,y=sim_core.pair_dataset(train)
         params={"n_cats": max(y)+1, "input_shape":(None,*train.dims())}
         model,extractor=self.make_nn(params)
         model.fit(X,y,epochs=n_epochs)
