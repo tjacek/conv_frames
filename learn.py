@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow.keras
 from tensorflow.keras import Input, Model
-import data.feats,sim_core
+import data.feats,data.seqs,sim_core
 
 class Train(object):
     def __init__(self,to_dataset,make_nn,read=None,save_model=None,batch_size=16):
@@ -39,6 +39,23 @@ class Extract(object):
         extractor=get_extractor(model,self.name)
         feats=get_features(frame_seq,extractor)
         feats.save(out_path)
+
+class ExtractSeqs(object):
+    def __init__(self,read,name="hidden"):
+        self.read=read
+        self.name=name
+
+    def __call__(self,in_path,nn_path,out_path):
+        data_dict=self.read(in_path)
+        model=base_read_model(data_dict,nn_path)
+        extractor=get_extractor(model,self.name)
+        def helper(img_i):
+            img_i=np.array(img_i)
+            feat_i=extractor.predict(img_i)
+            return feat_i
+        seq_dict=data_dict.transform(helper,new=True,single=False)
+        seq_dict=data.seqs.Seqs(seq_dict)
+        seq_dict.save(out_path)
 
 class SimTrain(object):
     def __init__(self,read,make_nn):
