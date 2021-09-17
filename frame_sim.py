@@ -13,13 +13,7 @@ class FrameSim(object):
 
     def __call__(self,params):
         input_shape=params["input_shape"]
-        img_a = Input(shape=input_shape)
-        img_b = Input(shape=input_shape)
-        feature_extractor = self.build_model(input_shape)
-        feats_a = feature_extractor(img_a)
-        feats_b = feature_extractor(img_b)
-        distance =sim_core.distance_layer(feats_a,feats_b)
-        model = Model(inputs=[img_a, img_b], outputs=distance)
+        model,feature_extractor=sim_core.sim_template(input_shape,self)
         model.compile(loss=sim_core.contrastive_loss, optimizer="adam")
         feature_extractor.summary()
         return model,feature_extractor
@@ -35,18 +29,30 @@ class FrameSim(object):
         return model
 
 def train(in_path,out_path,n_epochs=5,dims=(128,64)):
-    batch_size=8
-    fun=center_frame
-    action_dict=data.actions.get_actions(in_path,fun,out_path=None,dims=dims)
-    train,test=action_dict.split()
-    X,y=sim_core.pair_dataset(train)
-    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
-    params={"input_shape":(*train.dim(),1)}
     make_nn=FrameSim()
-    model,extractor=make_nn(params)
-    model.fit(X,y,epochs=n_epochs,batch_size=batch_size)
-    if(out_path):
-        extractor.save(out_path)
+    def read(in_path):
+        actions=data.actions.get_actions(in_path,
+            center_frame,out_path=None,dims=dims)
+#        actions.transform(lambda img_i: np.expand_dims(img_i,axis=-1))
+#        raise Exception( actions.dim())
+        return actions
+    train_sim=learn.SimTrain(read,make_nn,to_dataset,n_batch=8)
+    train_sim(in_path,out_path,n_epochs)
+#    train,test=action_dict.split()
+#    X,y=sim_core.pair_dataset(train)
+#    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
+#    params={"input_shape":(*train.dim(),1)}
+#    make_nn=FrameSim()
+#    model,extractor=make_nn(params)
+#    model.fit(X,y,epochs=n_epochs,batch_size=batch_size)
+#    if(out_path):
+#        extractor.save(out_path)
+
+def to_dataset(train):
+    X,y=sim_core.pair_dataset(train)
+    params={ "input_shape":(*train.dim(),1)}
+    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
+    return X,y,params
 
 def extract(in_path,nn_path,out_path):
     import tc_nn
@@ -70,5 +76,5 @@ def center_frame(frames):
 in_path="../best2/frames"
 nn_path="../deep_dtw/nn"
 out_path="../deep_dtw/seqs"
-#train(in_path,nn_path)
-extract(in_path,nn_path,out_path)
+train(in_path,nn_path)
+#extract(in_path,nn_path,out_path)

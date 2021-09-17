@@ -21,12 +21,13 @@ def all_cat(name_i,name_j):
 def sim_template(input_shape,builder):
     img_a = Input(shape=input_shape)
     img_b = Input(shape=input_shape)
-    feature_extractor = self.build_model(input_shape)
+    feature_extractor = builder.build_model(input_shape)
     feats_a = feature_extractor(img_a)
     feats_b = feature_extractor(img_b)
     distance = distance_layer(feats_a,feats_b)
-    model = Model(inputs=[img_a, img_b], outputs=distance)
-
+    model=Model(inputs=[img_a, img_b], outputs=distance)
+    return model,feature_extractor
+    
 def distance_layer(feats_a,feats_b):
     return Lambda(euclidean_distance)([feats_a, feats_b])
 

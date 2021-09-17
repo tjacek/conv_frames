@@ -58,16 +58,19 @@ class ExtractSeqs(object):
         seq_dict.save(out_path)
 
 class SimTrain(object):
-    def __init__(self,read,make_nn):
+    def __init__(self,read,make_nn,to_dataset,n_batch=8):
         self.read=read
         self.make_nn=make_nn
+        self.to_dataset=to_dataset
+        self.n_batch=n_batch
 
     def __call__(self,data_dict,out_path,n_epochs=5):
         if(type(data_dict)==str):
             data_dict=self.read(data_dict ) 
         train,test=data_dict.split()
-        X,y=sim_core.pair_dataset(train)
-        params={"n_cats": max(y)+1, "input_shape":(None,*train.dims())}
+        X,y,params=self.to_dataset(train)
+#        X,y=sim_core.pair_dataset(train)
+#        params={"n_cats": max(y)+1, "input_shape":(None,*train.dims())}
         model,extractor=self.make_nn(params)
         model.fit(X,y,epochs=n_epochs)
         if(out_path):
@@ -82,7 +85,6 @@ def get_features(frame_seq,extractor):
     return feats
    
 def base_read_model(frame_seq,nn_path):
-#    raise Exception(nn_path)
     return tensorflow.keras.models.load_model(nn_path)
 
 def base_save_model(model,out_path):
