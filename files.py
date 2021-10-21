@@ -70,3 +70,12 @@ def ens_paths(dir_path,common_path,binary_path):
     binary="%s/%s" % (dir_path,binary_path)
     common=["%s/%s" % (dir_path,path_i) for path_i in common_path]
     return {"common":common ,"binary":binary}
+
+def find_dirs(in_path,pred=None):
+    if(pred is None):
+        pred=lambda x:True
+    all_paths=[]
+    for root, directories, filenames in os.walk(in_path):
+        if(pred(root)):
+            all_paths.append(root)
+    return all_paths
