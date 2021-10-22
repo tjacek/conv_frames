@@ -1,4 +1,4 @@
-import os,re
+import os,re,shutil
 
 class Name(str):
     def __new__(cls, p_string):
@@ -79,3 +79,11 @@ def find_dirs(in_path,pred=None):
         if(pred(root)):
             all_paths.append(root)
     return all_paths
+
+def move_dirs(paths,out_path,get_name):
+    make_dir(out_path)
+    for path_i in paths:
+        name_i=get_name(path_i)
+        out_i="%s/%s" % (out_path,name_i)
+        print(out_i)
+        shutil.move(path_i,out_i)
