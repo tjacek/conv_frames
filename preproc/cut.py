@@ -19,9 +19,14 @@ class ActionState(object):
 
     def show(self,name_i,text_i):
         img_i=self.actions_dict[name_i]
-        position=literal_eval(text_i)
-        self.train_data[name_i]=position
-        new_img_i=self.cut_fun(img_i,position)
+        for img_i in list( self.actions_dict.values()):
+            print(type(img_i))
+        if(text_i=="None"):
+            new_img_i=img_i
+        else:
+            position=literal_eval(text_i)
+            self.train_data[name_i]=position
+            new_img_i="OK"#self.cut_fun(img_i,position)
         cv2.imshow(name_i,new_img_i)
 
     def keys(self):
@@ -79,7 +84,7 @@ def read_train(train_path):
     return json.load(open(train_path))
 
 def make_action_state(in_path,train_path="train",cut_fun=None,default_value=None):
-    actions_dict=data.actions.read_actions(in_path)
+    actions_dict=data.actions.read_actions(in_path,"color")
     if(os.path.isfile(train_path)):
         train_data=read_train(train_path)#json.load(open(train_path))
     else:

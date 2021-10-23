@@ -37,12 +37,16 @@ class ActionImgs(dict):
 			out_i="%s/%s.png" % (out_path,name_i)
 			cv2.imwrite(out_i, img_i)
 
-def read_actions(in_path):
+def read_actions(in_path,img_type="grey"):
+	color= cv2.IMREAD_GRAYSCALE if(img_type=="grey") else  cv2.IMREAD_COLOR
 	actions=ActionImgs()
 	for path_i in files.top_files(in_path):
 		name_i=files.Name(path_i.split('/')[-1])
 		name_i=name_i.clean()
-		actions[name_i]=cv2.imread(path_i,cv2.IMREAD_GRAYSCALE)
+		img_i=cv2.imread(path_i,color)
+		if(img_i is None):
+			raise Exception(path_i)
+		actions[name_i]=img_i
 	return actions
 
 def get_actions(in_path,fun,out_path=None,dims=(64,64)):
