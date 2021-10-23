@@ -60,6 +60,20 @@ def get_actions(in_path,fun,out_path=None,dims=(64,64)):
 		actions.save(out_path)
 	return actions
 
+def get_actions_eff(in_path,fun,out_path=None,dims=None):
+    read=data.imgs.ReadFrames(1,cv2.IMREAD_COLOR)
+    files.make_dir(out_path)
+    for i,path_i in enumerate(files.top_files(in_path)):
+        name_i=files.Name(path_i.split('/')[-1]).clean()
+        frames=[ read(path_j)#,n_split) 
+                for path_j in files.top_files(path_i)]
+        frames=[ frame_i for frame_i in frames
+                    if(not (frame_i is None))]
+        print(i)
+        action_i=fun(frames)
+        out_i="%s/%s.png" % (out_path,name_i)
+        cv2.imwrite(out_i, action_i)
+
 def tranform_actions(in_path,out_path,fun):
 	actions=read_actions(in_path)
 	actions.transform(fun)

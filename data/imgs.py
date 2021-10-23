@@ -111,24 +111,42 @@ class Downsample(object):
         return [frame_i for i,frame_i in enumerate(frames)
                     if((i%self.n)==0)]
 
-def read_frame_seqs(in_path,n_split=1):
+def read_frame_seqs(in_path,read=None):
+    if(read is None):
+        read=ReadFrames()
+    if(type(read)==int):
+        read=ReadFrames(n_split=read)
     frame_seqs=FrameSeqs()
     for i,path_i in enumerate(files.top_files(in_path)):
         name_i=files.Name(path_i.split('/')[-1]).clean()
         if(len(name_i)==0):
             name_i=files.Name(str(i))
-        frames=[ read_frame(path_j,n_split) 
+        frames=[ read(path_j)#,n_split) 
                 for path_j in files.top_files(path_i)]
         frame_seqs[name_i]=frames
     return frame_seqs
 
-def read_frame(in_path,n_split=1):
-    frame_ij=cv2.imread(in_path,cv2.IMREAD_GRAYSCALE)
-    if(n_split is None):
-        n_split=int(frame_ij.shape[1] /frame_ij.shape[0])    
-    if(n_split==1):
-        return frame_ij
-    return np.array(np.vsplit(frame_ij,n_split)).T
+class ReadFrames(object):
+    def __init__(self,n_split=1,color=cv2.IMREAD_GRAYSCALE):
+        self.n_split=n_split
+        self.color=color
+
+    def __call__(self,in_path):
+        n_split=self.n_split
+        frame_ij=cv2.imread(in_path,self.color)
+        if(n_split is None):
+            n_split=int(frame_ij.shape[1] /frame_ij.shape[0])    
+        if(n_split==1):
+            return frame_ij
+        return np.array(np.vsplit(frame_ij,n_split)).T
+
+#def read_frame(in_path,n_split=1):
+#    frame_ij=cv2.imread(in_path,cv2.IMREAD_GRAYSCALE)
+#    if(n_split is None):
+#        n_split=int(frame_ij.shape[1] /frame_ij.shape[0])    
+#    if(n_split==1):
+#        return frame_ij
+#    return np.array(np.vsplit(frame_ij,n_split)).T
 
 def save_frames(in_path,frames):
     files.make_dir(in_path)
@@ -136,13 +154,13 @@ def save_frames(in_path,frames):
         out_i="%s/%d.png" % (in_path,i)
         cv2.imwrite(out_i, frame_i)
 
-def extract_features(in_path,nn_path,out_path):
-    frame_seqs=read_frame_seqs(in_path)
-    model=load_model(nn_path)   
-    feat_seqs=seqs.Seqs()
-    for name_i,seq_i in frame_seqs.items():
-        feat_seqs[name_i]=model.predict(np.array(seq_i))
-    feat_seqs.save(out_path)
+#def extract_features(in_path,nn_path,out_path):
+#    frame_seqs=read_frame_seqs(in_path)
+#    model=load_model(nn_path)   
+#    feat_seqs=seqs.Seqs()
+#    for name_i,seq_i in frame_seqs.items():
+#        feat_seqs[name_i]=model.predict(np.array(seq_i))
+#    feat_seqs.save(out_path)
 
 def rescale_seqs(in_path,out_path,dims=(64,64),n_split=1):
     frame_seqs=read_frame_seqs(in_path,n_split=n_split)
