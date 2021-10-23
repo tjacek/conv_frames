@@ -78,3 +78,14 @@ def tranform_actions(in_path,out_path,fun):
 	actions=read_actions(in_path)
 	actions.transform(fun)
 	actions.save(out_path)
+
+def transform_lazy(in_path,out_path,fun):
+    color=cv2.IMREAD_COLOR
+    files.make_dir(out_path)
+    for i,path_i in enumerate(files.top_files(in_path)):
+        action_i=cv2.imread(path_i,color)
+        name_i=path_i.split("/")[-1]
+        action_i=fun(name_i,action_i)
+        out_i="%s/%s" % (out_path,name_i)
+        print(action_i.shape)
+        cv2.imwrite(out_i, action_i)
