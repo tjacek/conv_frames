@@ -35,7 +35,7 @@ def do_exp(in_path,out_path,train_path="train_rect"):
     cut_frames(in_path,out_path,train_path)
 
 if __name__ == "__main__":
-    action_path="../../rgb"
-    make_exp(action_path,train_path="train_rect")
+    action_path="../../actions"
+    make_exp(action_path,train_path="train")
 #    files.make_dir(out_path)
 #    do_exp(in_path,out_path,train_path)
