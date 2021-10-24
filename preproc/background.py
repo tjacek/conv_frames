@@ -30,20 +30,31 @@ def larges_cc(in_path,out_path):
         return segmentation
     data.actions.transform_lazy(in_path,out_path,helper)
 
-def cv_background(in_path,out_path):
-#    backgrounds=data.actions.read_actions(in_path,"color")
+def cv_background(in_path,out_path,background_path):
+    backgrounds=data.actions.read_actions(background_path,"color")
+    backgrounds.transform(to_grey)
     def helper(name_i,frames):
         print(name_i)
-#        view_j=name_i.split("_")[-1].split(".")[0]
-        frames=[cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
-                    for frame_i in frames
-                        if(not (frame_i is None))]
+        view_j=name_i.split("_")[-1].split(".")[0]
+        frames=to_grey(frames)
+        background_j=backgrounds[view_j]
+        frames=[ (frame_i-background_j) for frame_i in frames]
+        for frame_i in frames:
+            frame_i[frame_i<0]=0
         return frames        
     data.imgs.transform_lazy(in_path,out_path,helper)
+
+
+def to_grey(frames):
+    if(type(frames)==list):
+        return [cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
+                    for frame_i in frames
+                        if(not (frame_i is None))]
+    return cv2.cvtColor(frames, cv2.COLOR_BGR2GRAY)
 
 in_path="../../Background/raw"
 action_path="../../actions"
 out_path="../../actions2"
 #substract(in_path,action_path,out_path)
 #larges_cc(out_path,"../../actions3")
-cv_background("../../rgb","../../box")
+cv_background("../../rgb","../../box",in_path)
