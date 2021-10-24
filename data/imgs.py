@@ -174,3 +174,15 @@ def tranform_frames(in_path,out_path,fun,whole=False):
     else:
         frames.transform(fun)
     frames.save(out_path)
+
+def transform_lazy(in_path,out_path,fun,read=None):
+    if(read is None):
+        read=ReadFrames(color=cv2.IMREAD_COLOR)
+    files.make_dir(out_path)
+    for i,path_i in enumerate(files.top_files(in_path)):
+        name_i=path_i.split("/")[-1]
+        frames=[ read(path_j) 
+                for path_j in files.top_files(path_i)]
+        out_i="%s/%s" % (out_path,name_i)
+        frames=fun(name_i,frames)
+        save_frames(out_i,frames)
