@@ -2,12 +2,14 @@ import sys
 sys.path.append("..")
 import numpy as np
 import cv2,json
-import data.actions
+import data.actions,files
 
 def get_box(action_path,out_path):
-    actions=data.actions.read_actions(action_path,"grey")
     dataset={}
-    for name_i,img_i in actions.items():
+    for i,path_i in enumerate(files.top_files(action_path)):
+        name_i=files.Name(path_i.split("/")[-1]).clean()
+        print(name_i)
+        img_i=cv2.imread(path_i,cv2.IMREAD_GRAYSCALE)
         x,y,w,h=cv2.boundingRect(img_i)
         dataset[name_i]=(y,x,h,w)
     with open(out_path, 'w') as f:
