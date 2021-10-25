@@ -11,8 +11,8 @@ class ActionImgs(dict):
     
 	def scale(self,dims=(64,64)):
 		def helper(img_i):
-			return cv2.resize(img_i,dsize=dims,
-							interpolation=cv2.INTER_CUBIC)
+			return scale_frames(img_i,dims) 
+#cv2.resize(img_i,dsize=dims,interpolation=cv2.INTER_CUBIC)
 		self.transform(helper)
 
 	def add_dim(self):
@@ -37,6 +37,10 @@ class ActionImgs(dict):
 			out_i="%s/%s.png" % (out_path,name_i)
 			cv2.imwrite(out_i, img_i)
 
+def scale_frames(img_i,dims):
+    return cv2.resize(img_i,dsize=dims,
+					interpolation=cv2.INTER_CUBIC)
+
 def read_actions(in_path,img_type="grey"):
 	color= cv2.IMREAD_GRAYSCALE if(img_type=="grey") else  cv2.IMREAD_COLOR
 	actions=ActionImgs()
@@ -50,9 +54,10 @@ def read_actions(in_path,img_type="grey"):
 	return actions
 
 def get_actions(in_path,fun,out_path=None,dims=(64,64)):
-	frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
+	frame_seqs=data.imgs.read_frame_seqs(in_path)#,n_split=1)
 	actions=ActionImgs()
 	for name_i,seq_i in frame_seqs.items():
+		print(name_i)
 		actions[name_i]=fun(seq_i)
 	if(dims):
 		actions.scale(dims)
