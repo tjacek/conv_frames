@@ -19,14 +19,12 @@ class ActionState(object):
 
     def show(self,name_i,text_i):
         img_i=self.actions_dict[name_i]
-        for img_i in list( self.actions_dict.values()):
-            print(type(img_i))
         if(text_i=="None"):
             new_img_i=img_i
         else:
             position=literal_eval(text_i)
             self.train_data[name_i]=position
-            new_img_i="OK"#self.cut_fun(img_i,position)
+            new_img_i=self.cut_fun(img_i,position)
         cv2.imshow(name_i,new_img_i)
 
     def keys(self):
@@ -66,16 +64,18 @@ def cut_actions(in_path,train_path,out_path,cut_fun):
     new_actions.save(out_path)
 
 def cut_frames(in_path,train_path,out_path,cut_fun):
-    frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
     train_dict=read_train(train_path)
-    validate_datasets(frame_seqs,train_dict)
     train_data=TrainDec(train_dict,cut_fun)
-    new_frames=data.imgs.FrameSeqs()
-    for name_i,seq_i in frame_seqs.items():
+    def helper(name_i,frames_i):
+        print(name_i)
         if(name_i in train_data):
-            seq_i=[ train_data(name_i,frame_i)  for frame_i in seq_i]
-        new_frames[name_i]=seq_i
-    new_frames.save(out_path) 
+            frames_i=[frame_j
+                        for frame_j in frames_i
+                            if(not (frame_j is None)) ]
+            frames=[train_data(name_i,frame_j) 
+                    for frame_j in frames_i]
+        return frames
+    data.imgs.transform_lazy(in_path,out_path,helper)
 
 def make_train(actions_dict,default_value):
     return {name_i:default_value for name_i in actions_dict.keys()}	
@@ -85,6 +85,7 @@ def read_train(train_path):
 
 def make_action_state(in_path,train_path="train",cut_fun=None,default_value=None):
     actions_dict=data.actions.read_actions(in_path,"color")
+#    raise Exception(actions_dict.keys())
     if(os.path.isfile(train_path)):
         train_data=read_train(train_path)#json.load(open(train_path))
     else:
