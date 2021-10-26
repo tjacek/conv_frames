@@ -40,7 +40,7 @@ class TrainDec(object):
         self.cut_fun=cut_fun
 
     def __contains__(self, name_i):
-        if(not name_i self.data):
+        if(not name_i in self.data):
             return False
         return (np.product(self.data[name_i])!=0)
 
@@ -75,9 +75,10 @@ def cut_frames(in_path,train_path,out_path,cut_fun):
             frames_i=[frame_j
                         for frame_j in frames_i
                             if(not (frame_j is None)) ]
-            frames=[train_data(name_i,frame_j) 
+            frames_i=[train_data(name_i,frame_j) 
                     for frame_j in frames_i]
         else:
+            frames_i=[]
             errors.append(name_i)
         return frames_i
     data.imgs.transform_lazy(in_path,out_path,helper)
