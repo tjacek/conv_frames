@@ -36,6 +36,9 @@ def do_exp(in_path,out_path,train_path="train_rect"):
 
 if __name__ == "__main__":
     action_path="../../actions"
-    make_exp(action_path,train_path="train")
+    train_path="train"
+#    make_exp(action_path,train_path)
 #    files.make_dir(out_path)
-#    do_exp(in_path,out_path,train_path)
+    in_path="../../rgb"
+    out_path="../../box"  
+    do_exp(in_path,out_path,train_path)

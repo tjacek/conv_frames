@@ -1,5 +1,5 @@
 import numpy as np
-import cv2
+import cv2,os.path
 #from keras.models import load_model
 import files,data.seqs
 
@@ -140,14 +140,6 @@ class ReadFrames(object):
             return frame_ij
         return np.array(np.vsplit(frame_ij,n_split)).T
 
-#def read_frame(in_path,n_split=1):
-#    frame_ij=cv2.imread(in_path,cv2.IMREAD_GRAYSCALE)
-#    if(n_split is None):
-#        n_split=int(frame_ij.shape[1] /frame_ij.shape[0])    
-#    if(n_split==1):
-#        return frame_ij
-#    return np.array(np.vsplit(frame_ij,n_split)).T
-
 def save_frames(in_path,frames):
     files.make_dir(in_path)
     for i,frame_i in enumerate(frames):
@@ -175,14 +167,15 @@ def tranform_frames(in_path,out_path,fun,whole=False):
         frames.transform(fun)
     frames.save(out_path)
 
-def transform_lazy(in_path,out_path,fun,read=None):
+def transform_lazy(in_path,out_path,fun,read=None,recreate_dirs=False):
     if(read is None):
         read=ReadFrames(color=cv2.IMREAD_COLOR)
     files.make_dir(out_path)
     for i,path_i in enumerate(files.top_files(in_path)):
         name_i=path_i.split("/")[-1]
-        frames=[ read(path_j) 
-                for path_j in files.top_files(path_i)]
         out_i="%s/%s" % (out_path,name_i)
-        frames=fun(name_i,frames)
-        save_frames(out_i,frames)
+        if(not (recreate_dirs  or os.path.exists(out_i))):
+            frames=[ read(path_j) 
+                for path_j in files.top_files(path_i)]
+            frames=fun(name_i,frames)
+            save_frames(out_i,frames)
