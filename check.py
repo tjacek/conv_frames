@@ -1,6 +1,6 @@
 import numpy as np
 from collections import defaultdict
-import data.imgs
+import data.imgs,files
 
 def seq_len(in_path):
     frame_seqs=data.imgs.read_frame_seqs(in_path,n_split=1)
@@ -31,10 +31,15 @@ def mean_value(in_path):
         values=[ (name_j,np.mean(frame_seqs[name_j])) 
                     for name_j in names_i]
         mean_i=np.mean([value_i[1] for value_i in values])
-#        print(values)
         print(mean_i)
 
-in_path="../../2021_VII/3DHOI/frames"
-in_path="../3DHOI3/full6/frames"
-#seq_len(in_path)
-mean_value(in_path)
+def empty_dirs(in_path):
+    empty=[]
+    for path_i in files.top_files(in_path):
+        len_i=len(files.top_files(path_i))
+        if(len_i==0):
+            empty.append(path_i)
+    print(empty)
+
+in_path="../box/frames"
+empty_dirs(in_path)
