@@ -2,7 +2,7 @@ import numpy as np
 from tensorflow.keras.layers import Input,Dense,Flatten
 from tensorflow.keras.models import Model
 import data.actions,data.imgs
-import sim_core,deep,learn
+import sim_core,deep,learn,files
 
 class FrameSim(object):
     def __init__(self,n_hidden=128):
@@ -28,25 +28,14 @@ class FrameSim(object):
         model = Model(inputs, x)
         return model
 
-def train(in_path,out_path,n_epochs=5,dims=(128,64)):
-    make_nn=FrameSim()
-    def read(in_path):
-        actions=data.actions.get_actions(in_path,
-            center_frame,out_path=None,dims=dims)
-#        actions.transform(lambda img_i: np.expand_dims(img_i,axis=-1))
-#        raise Exception( actions.dim())
-        return actions
-    train_sim=learn.SimTrain(read,make_nn,to_dataset,n_batch=8)
-    train_sim(in_path,out_path,n_epochs)
-#    train,test=action_dict.split()
-#    X,y=sim_core.pair_dataset(train)
-#    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
-#    params={"input_shape":(*train.dim(),1)}
+#def train(in_path,out_path,n_epochs=5,dims=(128,64)):
 #    make_nn=FrameSim()
-#    model,extractor=make_nn(params)
-#    model.fit(X,y,epochs=n_epochs,batch_size=batch_size)
-#    if(out_path):
-#        extractor.save(out_path)
+#    def read(in_path):
+#        actions=data.actions.get_actions(in_path,
+#            center_frame,out_path=None,dims=None)
+#        return actions
+#    train_sim=learn.SimTrain(read,make_nn,to_dataset,n_batch=8)
+#    train_sim(in_path,out_path,n_epochs)
 
 def to_dataset(train):
     X,y=sim_core.pair_dataset(train)
@@ -73,8 +62,25 @@ def center_frame(frames):
     center= int(len(frames)/2)
     return frames[center]
 
-in_path="../best2/frames"
-nn_path="../deep_dtw/nn"
-out_path="../deep_dtw/seqs"
-train(in_path,nn_path)
+def median(in_path,out_path):
+    def helper(frames):
+        return np.median(frames,axis=0)
+    data.actions.get_actions_eff(in_path,helper,out_path,dims=None)
+
+def read_paths(in_path):
+    paths=[] 
+    for path_i in files.top_files(in_path):
+        name_i=files.Name(path_i.split("/")[-1]).clean()
+        if( (name_i.get_person() %2) ==1):
+            person_i= name_i.split("_")[2]
+            if(person_i=="1"):
+                paths.append(path_i)
+    return paths
+
+in_path="../final"
+nn_path="sim_nn"
+out_path="seqs"
+#median(in_path,"../median")
+print(len( read_paths("../median")) )
+#train(in_path,nn_path)
 #extract(in_path,nn_path,out_path)
