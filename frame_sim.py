@@ -28,14 +28,15 @@ class FrameSim(object):
         model = Model(inputs, x)
         return model
 
-#def train(in_path,out_path,n_epochs=5,dims=(128,64)):
-#    make_nn=FrameSim()
-#    def read(in_path):
-#        actions=data.actions.get_actions(in_path,
-#            center_frame,out_path=None,dims=None)
-#        return actions
-#    train_sim=learn.SimTrain(read,make_nn,to_dataset,n_batch=8)
-#    train_sim(in_path,out_path,n_epochs)
+def train(in_path,out_path,n_epochs=5,dims=(128,64)):
+    make_nn=FrameSim()
+    def read(in_path):
+        paths=read_paths(in_path,["1","2","3"])
+        print(paths)
+        data_dict=actions=data.actions.from_paths(paths)
+        return data_dict
+    train_sim=learn.SimTrain(read,make_nn,to_dataset,n_batch=8)
+    train_sim(in_path,out_path,n_epochs)
 
 def to_dataset(train):
     X,y=sim_core.pair_dataset(train)
@@ -67,13 +68,14 @@ def median(in_path,out_path):
         return np.median(frames,axis=0)
     data.actions.get_actions_eff(in_path,helper,out_path,dims=None)
 
-def read_paths(in_path):
+def read_paths(in_path,persons):
+    persons=set(persons)
     paths=[] 
     for path_i in files.top_files(in_path):
         name_i=files.Name(path_i.split("/")[-1]).clean()
-        if( (name_i.get_person() %2) ==1):
+        if( (name_i.get_person() %2)==1):
             person_i= name_i.split("_")[2]
-            if(person_i=="1"):
+            if(person_i in persons):
                 paths.append(path_i)
     return paths
 
@@ -81,6 +83,6 @@ in_path="../final"
 nn_path="sim_nn"
 out_path="seqs"
 #median(in_path,"../median")
-print(len( read_paths("../median")) )
-#train(in_path,nn_path)
+#print(len( read_paths("../median")) )
+train("../median",nn_path)
 #extract(in_path,nn_path,out_path)

@@ -12,7 +12,6 @@ class ActionImgs(dict):
 	def scale(self,dims=(64,64)):
 		def helper(img_i):
 			return scale_frames(img_i,dims) 
-#cv2.resize(img_i,dsize=dims,interpolation=cv2.INTER_CUBIC)
 		self.transform(helper)
 
 	def add_dim(self):
@@ -94,3 +93,12 @@ def transform_lazy(in_path,out_path,fun):
         out_i="%s/%s" % (out_path,name_i)
         print(action_i.shape)
         cv2.imwrite(out_i, action_i)
+
+def from_paths(paths):
+    action_imgs= ActionImgs()
+    for i,path_i in enumerate(paths):
+        print(path_i)
+        action_i=cv2.imread(path_i)
+        name_i=files.get_name(path_i)
+        action_imgs[name_i]=action_i
+    return action_imgs

@@ -18,6 +18,9 @@ class Name(str):
     def sub_seq(self,k):
         return Name("_".join(self.split("_")[:k]))
 
+def get_name(path_i):
+    return Name(path_i.split("/")[-1]).clean()
+
 def top_files(path):
     paths=[ path+'/'+file_i for file_i in os.listdir(path)]
     paths=sorted(paths,key=natural_keys)
