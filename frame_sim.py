@@ -1,7 +1,8 @@
 import numpy as np
 from tensorflow.keras.layers import Input,Dense,Flatten
 from tensorflow.keras.models import Model
-import data.actions,data.imgs
+from keras.models import load_model
+import data.actions,data.imgs,data.seqs
 import sim_core,deep,learn,files
 
 class FrameSim(object):
@@ -40,26 +41,24 @@ def train(in_path,out_path,n_epochs=5,dims=(128,64)):
     train_sim=learn.SimTrain(read,make_nn,n_batch=8)
     train_sim(in_path,out_path,n_epochs)
 
-#def to_dataset(train):
-#    X,y=sim_core.pair_dataset(train)
-#    params={ "input_shape":train.dims()}
-#    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
-#    return X,y,params
-
 def extract(in_path,nn_path,out_path):
-    import tc_nn
-    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-    frame_dict= read(in_path)
-    model=learn.base_read_model(frame_dict,nn_path)
+    read=data.imgs.ReadFrames()
+#    model=  load_model(nn_path)#
+    model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"hidden")
-    def helper(img_i):
-        img_i=np.array(img_i)
-        img_i=np.swapaxes(img_i, 1, 2)
-        feat_i=extractor.predict(img_i)
+    def helper(frames):
+        print(len(frames))
+        frames=np.array(frames)
+        frames=np.expand_dims(frames,-1)
+        feat_i=extractor.predict(frames)
         return feat_i
-    seq_dict=frame_dict.transform(helper,new=True,single=False)
-    seq_dict=data.seqs.Seqs(seq_dict)
-    seq_dict.save(out_path)
+    feat_seq=data.seqs.Seqs()
+    for i,path_i in enumerate(files.top_files(in_path)):
+        frames=[ read(path_j) 
+                for path_j in files.top_files(path_i)]
+        name_i=files.get_name(path_i)
+        feat_seq[name_i]=helper(frames)
+    feat_seq.save(out_path)
 
 def center_frame(frames):
     center= int(len(frames)/2)
@@ -86,5 +85,5 @@ nn_path="sim_nn"
 out_path="seqs"
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
-train("../median",nn_path)
-#extract(in_path,nn_path,out_path)
+#train("../median",nn_path)
+extract(in_path,nn_path,out_path)
