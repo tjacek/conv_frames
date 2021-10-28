@@ -6,7 +6,7 @@ class ActionImgs(dict):
 	def __init__(self, arg=[]):
 		super(ActionImgs, self).__init__(arg)
 
-	def dim(self):
+	def dims(self):
 		return list(self.values())[0].shape
     
 	def scale(self,dims=(64,64)):
@@ -94,11 +94,11 @@ def transform_lazy(in_path,out_path,fun):
         print(action_i.shape)
         cv2.imwrite(out_i, action_i)
 
-def from_paths(paths):
+def from_paths(paths,color=cv2.IMREAD_GRAYSCALE):
     action_imgs= ActionImgs()
     for i,path_i in enumerate(paths):
         print(path_i)
-        action_i=cv2.imread(path_i)
+        action_i=cv2.imread(path_i,color)
         name_i=files.get_name(path_i)
         action_imgs[name_i]=action_i
     return action_imgs

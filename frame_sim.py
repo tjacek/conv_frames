@@ -19,6 +19,7 @@ class FrameSim(object):
         return model,feature_extractor
 
     def build_model(self,input_shape):
+        print(input_shape)
         inputs = Input(input_shape)
         x=deep.add_conv_layer(inputs,self.n_kerns,self.kern_size,
                 self.pool_size,one_dim=False)
@@ -33,16 +34,17 @@ def train(in_path,out_path,n_epochs=5,dims=(128,64)):
     def read(in_path):
         paths=read_paths(in_path,["1","2","3"])
         print(paths)
-        data_dict=actions=data.actions.from_paths(paths)
+        data_dict=data.actions.from_paths(paths)
+        data_dict.add_dim()
         return data_dict
-    train_sim=learn.SimTrain(read,make_nn,to_dataset,n_batch=8)
+    train_sim=learn.SimTrain(read,make_nn,n_batch=8)
     train_sim(in_path,out_path,n_epochs)
 
-def to_dataset(train):
-    X,y=sim_core.pair_dataset(train)
-    params={ "input_shape":(*train.dim(),1)}
-    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
-    return X,y,params
+#def to_dataset(train):
+#    X,y=sim_core.pair_dataset(train)
+#    params={ "input_shape":train.dims()}
+#    X=[ np.expand_dims(x_i,axis=-1) for x_i in X]
+#    return X,y,params
 
 def extract(in_path,nn_path,out_path):
     import tc_nn

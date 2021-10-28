@@ -58,19 +58,20 @@ class ExtractSeqs(object):
         seq_dict.save(out_path)
 
 class SimTrain(object):
-    def __init__(self,read,make_nn,to_dataset,n_batch=8):
+    def __init__(self,read,make_nn,n_batch=8):
         self.read=read
         self.make_nn=make_nn
-        self.to_dataset=to_dataset
+#        self.to_dataset=to_dataset
         self.n_batch=n_batch
 
     def __call__(self,data_dict,out_path,n_epochs=5):
         if(type(data_dict)==str):
             data_dict=self.read(data_dict ) 
         train,test=data_dict.split()
-        X,y,params=self.to_dataset(train)
-#        X,y=sim_core.pair_dataset(train)
-#        params={"n_cats": max(y)+1, "input_shape":(None,*train.dims())}
+#        X,y,params=self.to_dataset(train)
+        X,y=sim_core.pair_dataset(train)
+#        raise Exception(X[0].shape)
+        params={"n_cats": max(y)+1, "input_shape":train.dims()}
         model,extractor=self.make_nn(params)
         model.fit(X,y,epochs=n_epochs)
         if(out_path):
