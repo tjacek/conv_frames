@@ -51,12 +51,7 @@ def extract(in_path,nn_path,out_path):
         frames=np.expand_dims(frames,-1)
         feat_i=extractor.predict(frames)
         return feat_i
-    feat_seq=data.seqs.Seqs()
-    for i,path_i in enumerate(files.top_files(in_path)):
-        frames=[ read(path_j) 
-                for path_j in files.top_files(path_i)]
-        name_i=files.get_name(path_i)
-        feat_seq[name_i]=helper(frames)
+    feat_seq=data.seqs.transform_seqs(in_path,read,helper)
     feat_seq.save(out_path)
 
 def center_frame(frames):
@@ -87,7 +82,9 @@ def sim_exp(in_path,out_path):
     frame_path="%s/frames" % out_path
 #    get_frames(in_path,frame_path)
     nn_path="%s/nn" % out_path
-    train(frame_path,nn_path,n_epochs=30,n_batch=8)
+#    train(frame_path,nn_path,n_epochs=30,n_batch=8)
+    seq_path="%s/seqs" % out_path
+    extract(in_path,nn_path,seq_path)
 
 in_path="../final"
 sim_exp(in_path,"../center")

@@ -65,3 +65,12 @@ def read_seqs(in_path):
 		name_i=files.Name(name_i).clean()
 		seq_dict[name_i]=data_i
 	return seq_dict
+
+def transform_seqs(in_path,read,fun):
+    feat_seq=Seqs()
+    for i,path_i in enumerate(files.top_files(in_path)):
+        frames=[ read(path_j) 
+                for path_j in files.top_files(path_i)]
+        name_i=files.get_name(path_i)
+        feat_seq[name_i]=fun(frames)
+    return feat_seq
