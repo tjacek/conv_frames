@@ -30,7 +30,7 @@ class FrameSim(object):
         model = Model(inputs, x)
         return model
 
-def train(in_path,out_path,n_epochs=5,dims=(128,64)):
+def train(in_path,out_path,n_epochs=5,n_batch=8):
     make_nn=FrameSim()
     def read(in_path):
         paths=read_paths(in_path,["1","2","3"])
@@ -38,7 +38,7 @@ def train(in_path,out_path,n_epochs=5,dims=(128,64)):
         data_dict=data.actions.from_paths(paths)
         data_dict.add_dim()
         return data_dict
-    train_sim=learn.SimTrain(read,make_nn,n_batch=8)
+    train_sim=learn.SimTrain(read,make_nn,n_batch=n_batch)
     train_sim(in_path,out_path,n_epochs)
 
 def extract(in_path,nn_path,out_path):
@@ -84,7 +84,10 @@ def read_paths(in_path,persons):
 
 def sim_exp(in_path,out_path):
     files.make_dir(out_path)
-    get_frames(in_path,"%s/frames" % out_path)
+    frame_path="%s/frames" % out_path
+#    get_frames(in_path,frame_path)
+    nn_path="%s/nn" % out_path
+    train(frame_path,nn_path,n_epochs=30,n_batch=8)
 
 in_path="../final"
 sim_exp(in_path,"../center")
