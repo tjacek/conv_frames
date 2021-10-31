@@ -43,7 +43,6 @@ def train(in_path,out_path,n_epochs=5,dims=(128,64)):
 
 def extract(in_path,nn_path,out_path):
     read=data.imgs.ReadFrames()
-#    model=  load_model(nn_path)#
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"hidden")
     def helper(frames):
@@ -64,10 +63,13 @@ def center_frame(frames):
     center= int(len(frames)/2)
     return frames[center]
 
-def median(in_path,out_path):
-    def helper(frames):
-        return np.median(frames,axis=0)
-    data.actions.get_actions_eff(in_path,helper,out_path,dims=None)
+def median(frames):
+    return np.median(frames,axis=0)
+
+def get_frames(in_path,out_path,fun=None):
+    if(fun is None):
+        fun=center_frame
+    data.actions.get_actions_eff(in_path,fun,out_path,dims=None)
 
 def read_paths(in_path,persons):
     persons=set(persons)
@@ -80,10 +82,13 @@ def read_paths(in_path,persons):
                 paths.append(path_i)
     return paths
 
+def sim_exp(in_path,out_path):
+    files.make_dir(out_path)
+    get_frames(in_path,"%s/frames" % out_path)
+
 in_path="../final"
-nn_path="sim_nn"
-out_path="seqs"
+sim_exp(in_path,"../center")
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
 #train("../median",nn_path)
-extract(in_path,nn_path,out_path)
+#extract(in_path,nn_path,out_path)
