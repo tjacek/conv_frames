@@ -132,6 +132,9 @@ class ReadFrames(object):
         self.color=color
 
     def __call__(self,in_path):
+        if( os.path.isdir(in_path)):
+            return [ self(path_i) 
+                for path_i in files.top_files(in_path)]
         n_split=self.n_split
         frame_ij=cv2.imread(in_path,self.color)
         if(n_split is None):
@@ -146,14 +149,6 @@ def save_frames(in_path,frames):
         out_i="%s/%d.png" % (in_path,i)
         cv2.imwrite(out_i, frame_i)
 
-#def extract_features(in_path,nn_path,out_path):
-#    frame_seqs=read_frame_seqs(in_path)
-#    model=load_model(nn_path)   
-#    feat_seqs=seqs.Seqs()
-#    for name_i,seq_i in frame_seqs.items():
-#        feat_seqs[name_i]=model.predict(np.array(seq_i))
-#    feat_seqs.save(out_path)
-
 def rescale_seqs(in_path,out_path,dims=(64,64),n_split=1):
     frame_seqs=read_frame_seqs(in_path,n_split=n_split)
     frame_seqs.scale(dims,new=False)
@@ -167,14 +162,14 @@ def tranform_frames(in_path,out_path,fun,whole=False):
         frames.transform(fun)
     frames.save(out_path)
 
-def transform_lazy(in_path,out_path,fun,read=None,recreate_dirs=False):
+def transform_lazy(in_path,out_path,fun,read=None,recreate=False):
     if(read is None):
         read=ReadFrames(color=cv2.IMREAD_COLOR)
     files.make_dir(out_path)
     for i,path_i in enumerate(files.top_files(in_path)):
         name_i=path_i.split("/")[-1]
         out_i="%s/%s" % (out_path,name_i)
-        if(not (recreate_dirs  or os.path.exists(out_i))):
+        if( recreate or not os.path.exists(out_i)):
             frames=[ read(path_j) 
                 for path_j in files.top_files(path_i)]
             frames=fun(name_i,frames)
