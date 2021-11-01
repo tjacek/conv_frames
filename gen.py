@@ -2,11 +2,12 @@ import random
 import data.imgs,files
 
 class LazySampler(object):
-    def __init__(self,all_paths,read=None):
+    def __init__(self,all_paths,read=None,size=30):
         if(read is None):
             read=data.imgs.ReadFrames()	
         self.all_paths=all_paths
-        self.read=read 
+        self.read=read
+        self.subsample=data.imgs.MinLength(size)
 
     def __len__(self):
         return len(self.all_paths)	
@@ -18,6 +19,7 @@ class LazySampler(object):
             frames=self.read(path_i)
             print(name_i)
             print(len(frames))
+            X.append(frames)
 
     def get_paths(self,k=100):
         random.shuffle(self.all_paths)
@@ -32,6 +34,7 @@ def make_lazy_sampler(in_path):
 def is_train(path_i):
     return (files.get_name(path_i).get_person()==1)
 
-in_path="../final"
-sampler=make_lazy_sampler(in_path)
-sampler.get_frames()
+if __name__ == "__main__":
+    in_path="../final"
+    sampler=make_lazy_sampler(in_path)
+    sampler.get_frames(1000)
