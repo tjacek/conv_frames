@@ -12,7 +12,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.normalization import BatchNormalization
 from keras import regularizers
 from keras.utils import to_categorical
-import gen,deep
+import gen,deep,data.feats,learn
 
 class FRAME_LSTM(object):
 	def __init__(self,dropout=0.5,activ='relu',batch=False,l1=0.01):
@@ -87,5 +87,26 @@ def train(in_path,out_path,n_frames=104,n_batch=8):
     	steps_per_epoch=n_iters,epochs=100)
     model.save(out_path)
 
+def extract(in_path,nn_path,out_path,size=30):
+    read=data.imgs.ReadFrames()
+    subsample=data.imgs.MinLength(size)
+    model=learn.base_read_model(None,nn_path)
+    extractor=learn.get_extractor(model,"global_avg")
+    def helper(in_path):
+        print(in_path)
+        frames=read(in_path)
+        frames=subsample(frames)
+        frames=np.array(frames)
+        frames=np.expand_dims(frames,-1)
+        frames=np.expand_dims(frames,0)
+        feat_i=extractor.predict(frames)
+#        raise Exception(feat_i.shape)	
+        return feat_i
+    feat_seq=data.feats.get_feats(in_path,helper)
+    feat_seq.save(out_path)
+
 in_path="../final"
-train(in_path,"test")
+nn_path="test"
+out_path="feats.txt"
+#train(in_path,nn_path)
+extract(in_path,nn_path,out_path)

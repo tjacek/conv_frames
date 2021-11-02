@@ -1,7 +1,4 @@
 import numpy as np,re
-#from sklearn.linear_model import LogisticRegression
-#from sklearn.metrics import classification_report
-#from sklearn.metrics import accuracy_score
 import files
 
 class Feats(dict):
@@ -71,19 +68,6 @@ class Feats(dict):
 		file_str.write(feat_txt)
 		file_str.close()
 
-def train_model(feats):
-	if(type(feats)==str):
-		feats=read_feats(feats)
-	feats.norm()
-	train,test=feats.split()
-	model=LogisticRegression(solver='liblinear')
-	X_train,y_train=train.to_dataset()
-	model.fit(X_train,y_train)
-	X_test,y_test=test.to_dataset()
-	y_pred=model.predict(X_test)
-	print(classification_report(y_test, y_pred,digits=4))
-	print(accuracy_score(y_test,y_pred))
-
 def read_feats(in_path):
     if(type(in_path)==list):
         all_feats=[read_feats(path_i) for path_i in in_path]
@@ -109,13 +93,11 @@ def common_names(names1,names2):
 
 def unified_exp(in_path):
 	all_feats=read_feats(files.top_files(in_path))
-#	raise Exception(all_feats.dim())
 	train_model(all_feats)
 
-if __name__ == "__main__":
-#	d=read_feats(["dtw/maxz/feats","dtw/corl/feats","dtw/skew/feats"])
-#	d=read_feats(['../agum/max_z/dtw','../agum/corl/dtw','../agum/skew/dtw'])
-#	d=read_feats(['../agum/max_z/person','../agum/corl/person','../agum/skew/person'])
-	d=read_feats(['../agum/max_z/cat','../agum/corl/cat','../agum/skew/cat'])
-	train_model(d)#"sim_feats")
-#	unified_exp("../agum/ens/feats")
+def get_feats(in_path,fun):
+    feats=Feats()
+    for i,path_i in enumerate(files.top_files(in_path)):
+        name_i=files.get_name(path_i)
+        feats[name_i]=fun(path_i)
+    return feats
