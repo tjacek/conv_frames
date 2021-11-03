@@ -9,20 +9,21 @@ from keras.layers.core import Dense, Dropout, Flatten, Activation
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.pooling import GlobalAveragePooling1D
 from keras.layers.recurrent import LSTM
-from keras.layers.normalization import BatchNormalization
+from keras.layers.normalization import layer_normalization
+import tensorflow.keras.optimizers
 from keras import regularizers
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 import gen,deep,data.feats,learn
 
 class FRAME_LSTM(object):
-	def __init__(self,dropout=0.5,activ='relu',batch=False,l1=0.01):
-#		if(optim_alg is None):
-#			optim_alg=deep.Adam(0.00001)
+	def __init__(self,dropout=0.5,activ='relu',batch=False,l1=None,optim_alg=None):
+		if(optim_alg is None):
+			optim_alg=tensorflow.keras.optimizers.Adam(learning_rate=0.00001)
 		self.dropout=dropout
 		self.activ=activ
 		self.batch=batch
 		self.l1=l1
-		self.optim_alg="adam"
+		self.optim_alg=optim_alg #"adam"
 
 	def __call__(self,params):
 		input_shape= (params['seq_len'],*params['dims']) 
@@ -63,7 +64,7 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
         model.add(TimeDistributed(Activation(activ)))
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
-def train(in_path,out_path,n_frames=104,n_batch=8):
+def train(in_path,out_path,n_frames=1024,n_batch=8):
     make_model=FRAME_LSTM()
     sampler=gen.make_lazy_sampler(in_path)
     params={'seq_len':sampler.subsample.size,
@@ -106,7 +107,7 @@ def extract(in_path,nn_path,out_path,size=30):
     feat_seq.save(out_path)
 
 in_path="../final"
-nn_path="test"
+nn_path="test_1024"
 out_path="feats.txt"
-#train(in_path,nn_path)
-extract(in_path,nn_path,out_path)
+train(in_path,nn_path)
+#extract(in_path,nn_path,out_path)
