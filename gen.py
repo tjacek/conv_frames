@@ -44,15 +44,33 @@ class LazySampler(object):
             y.append(name_i.get_cat())
         return X,y
 
-    def get_paths(self,k=100):
-        random.shuffle(self.all_paths)
+    def get_paths(self,k=100,selector=None):
+        if(selector):
+            paths=[]
+            for path_j in self.all_paths:
+                if(selector(path_j)):
+                    paths.append(path_j)
+        else:
+            paths=self.all_paths
+        random.shuffle(paths)
         return self.all_paths[:k]
+
+    def get_category(self,i):
+        cat_i=[]
+        for path_j in self.all_paths:
+            cat_j=get_cat(path_j):
+            if(name_j.get_cat()==i):
+                cat_i.append(path_j)
+        return cat_i 
 
 def make_lazy_sampler(in_path):
     all_paths=files.top_files(in_path)
     all_paths=[ path_i for path_i in all_paths
                     if(is_train(path_i))]
     return LazySampler(all_paths)
+
+def get_cat(path_i):
+    return files.get_name(path_i).get_cat()
 
 def is_train(path_i):
     return (files.get_name(path_i).get_person()==1)
