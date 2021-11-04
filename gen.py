@@ -4,9 +4,8 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
-class BinaryGenerator(Sequence):
-    def __init__(self,cat,sampler,n_iters,n_frames=100,n_batch=8):
-        self.cat=cat
+class BatchGenerator(object):
+    def __init__(self,sampler,n_iters,n_frames=100,n_batch=8):
         self.sampler=sampler
         self.n_iters=n_iters
         self.n_frames=n_frames
@@ -14,56 +13,59 @@ class BinaryGenerator(Sequence):
         self.X=None
         self.y=None
         self.i=0
-        self.on_epoch_end()
+    
+    def set(self,X,y):
+        self.X=X
+        self.y=y
 
-    def __len__(self):
-        return self.n_iters
-
-    def on_epoch_end(self):
-        if(self.i==0):
-            in_paths=self.sampler.get_category(self.cat)
-            selector=lambda path_j: get_cat(path_j)!=self.cat
-            out_paths=self.sampler.get_paths(self.n_frames,selector)
-            paths=in_paths+out_paths
-            X,y=self.sampler.get_frames(paths)
-            y= [ int(self.cat==y_k) for y_k in y]
-            y=to_categorical(y,2)
-            self.X=X
-            self.y=y
-
-    def __getitem__(self, index):
+    def get_batch(self, index):
         y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
         X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
         X_i=np.expand_dims(X_i,axis=-1)
         self.i=(self.i+1) % self.n_iters
         return X_i,y_i
 
-class AllGenerator(Sequence):   
-    def __init__(self,sampler,n_iters,n_frames=500,n_batch=8):
-        self.sampler=sampler
-        self.n_iters=n_iters
-        self.n_frames=n_frames
-        self.n_batch=n_batch
-        self.X=None
-        self.y=None
-        self.i=0
+class BinaryGenerator(Sequence):
+    def __init__(self,cat,batch_gen):
+        self.cat=cat
+        self.batch_gen=batch_gen
         self.on_epoch_end()
 
     def __len__(self):
-        return self.n_iters
+        return self.batch_gen.n_iters
+
+    def on_epoch_end(self):
+        if(self.batch_gen.i==0):
+            sampler=self.gen_batch.sampler
+            in_paths=sampler.get_category(self.cat)
+            selector=lambda path_j: get_cat(path_j)!=self.cat
+            out_paths=sampler.get_paths(self.n_frames,selector)
+            paths=in_paths+out_paths
+            X,y=sampler.get_frames(paths)
+            y= [ int(self.cat==y_k) for y_k in y]
+            y=to_categorical(y,2)
+            self.batch_gen.set(X,y)
+
+    def __getitem__(self, index):
+        return self.get_batch(index)
+
+class AllGenerator(Sequence):   
+    def __init__(self,batch_gen):
+        self.batch_gen=batch_gen
+        self.on_epoch_end()
+
+    def __len__(self):
+        return self.batch_gen.n_iters
 
     def on_epoch_end(self):
         if(self.i==0):
             X,y=self.sampler.get_frames(self.n_frames)
-            self.X=np.array(X)
-            self.y=to_categorical(y,12)
+            X=np.array(X)
+            y=to_categorical(y,12)
+            self.batch_gen.set(X,y)
 
     def __getitem__(self, index):
-        y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
-        X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
-        X_i=np.expand_dims(X_i,axis=-1)
-        self.i=(self.i+1) % self.n_iters
-        return X_i,y_i
+        return self.get_batch(index)
 
 class LazySampler(object):
     def __init__(self,all_paths,read=None,size=30):
