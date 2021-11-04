@@ -13,7 +13,7 @@ from keras.layers.normalization import layer_normalization
 import tensorflow.keras.optimizers
 from keras import regularizers
 from tensorflow.keras.utils import to_categorical
-import gen,deep,data.feats,learn
+import gen,deep,data.feats,learn,files
 
 class FRAME_LSTM(object):
 	def __init__(self,dropout=0.5,activ='relu',batch=False,l1=None,optim_alg=None):
@@ -64,16 +64,27 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
         model.add(TimeDistributed(Activation(activ)))
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
-def train(in_path,out_path,n_frames=1024,n_batch=8):
-    make_model=FRAME_LSTM()
+def ens(in_path,out_path,n_cats):
+    files.make_dir(out_path)
     sampler=gen.make_lazy_sampler(in_path)
-    params={'seq_len':sampler.subsample.size,
-                'dims':(128,64,1),"n_cats":12}
+    for i in range(n_cats):
+        out_i="%s/%d" % (out_path,i)
+        gen_i=gen.BinaryGenerator(i,sampler,n_frames=100)
+        train(gen_i,out_i,n_cats=2,n_epochs=5)
+
+def train(generator,out_path,n_cats=12,n_epochs=5):
+    if(type(generator)==str):
+        n_frames,n_batch=1024,8
+        sampler=gen.make_lazy_sampler(generator)
+        n_iters=int(n_frames/n_batch)
+        generator=gen.AllGenerator(sampler,n_iters,n_batch)
+    make_model=FRAME_LSTM()
+    params={'seq_len':30,#sampler.subsample.size,
+                'dims':(128,64,1),"n_cats":n_cats}
     model=make_model(params)
-    n_iters=int(n_frames/n_batch)
-    generator=gen.AllGenerator(sampler,n_iters,n_batch)
-    model.fit_generator(generator(),
-    	steps_per_epoch=n_iters,epochs=100)
+    
+    model.fit_generator(generator,
+    	steps_per_epoch=100,epochs=n_epochs)
     model.save(out_path)
 
 def extract(in_path,nn_path,out_path,size=30):
@@ -97,4 +108,5 @@ in_path="../final"
 nn_path="all_108/nn"
 out_path="all_108/feats.txt"
 #train(in_path,nn_path)
-extract(in_path,nn_path,out_path)
+#extract(in_path,nn_path,out_path)
+ens(in_path,"../ens",12)

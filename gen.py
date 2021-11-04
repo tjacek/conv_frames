@@ -1,6 +1,21 @@
 import random
 import data.imgs,files
 
+class BinaryGenerator(object):
+    def __init__(self,cat_i,sampler,n_frames=500):
+        self.cat_i=cat_i
+        self.sampler=sampler
+        self.n_frames=n_frames
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        in_paths=self.sampler.get_category(self.cat_i)
+        selector=lambda path_j: get_cat(path_j)!=self.cat_i
+        out_paths=self.sampler.get_paths(self.n_frames,selector)
+        raise Exception(in_paths)
+
 class AllGenerator(object):   
     def __init__(self,sampler,n_iters,n_batch=8):
         self.sampler=sampler
@@ -58,8 +73,8 @@ class LazySampler(object):
     def get_category(self,i):
         cat_i=[]
         for path_j in self.all_paths:
-            cat_j=get_cat(path_j):
-            if(name_j.get_cat()==i):
+            cat_j=get_cat(path_j)
+            if(cat_j==i):
                 cat_i.append(path_j)
         return cat_i 
 
