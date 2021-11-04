@@ -3,6 +3,7 @@
 #print("physical_devices-------------", len(physical_devices))
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
 import numpy as np
+from tensorflow import keras 
 from keras.models import Sequential
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.core import Dense, Dropout, Flatten, Activation
@@ -12,7 +13,6 @@ from keras.layers.recurrent import LSTM
 from keras.layers.normalization import layer_normalization
 import tensorflow.keras.optimizers
 from keras import regularizers
-from tensorflow.keras.utils import to_categorical
 import gen,deep,data.feats,learn,files
 
 class FRAME_LSTM(object):
@@ -107,6 +107,6 @@ def extract(in_path,nn_path,out_path,size=30):
 in_path="../final"
 nn_path="all_108/nn"
 out_path="all_108/feats.txt"
-#train(in_path,nn_path)
+train(in_path,nn_path)
 #extract(in_path,nn_path,out_path)
-ens(in_path,"../ens",12)
+#ens(in_path,"../ens",12)

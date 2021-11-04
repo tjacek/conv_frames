@@ -1,4 +1,7 @@
 import random
+import numpy as np
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
 class BinaryGenerator(object):
@@ -16,27 +19,32 @@ class BinaryGenerator(object):
         out_paths=self.sampler.get_paths(self.n_frames,selector)
         raise Exception(in_paths)
 
-class AllGenerator(object):   
-    def __init__(self,sampler,n_iters,n_batch=8):
+class AllGenerator(Sequence):   
+    def __init__(self,sampler,n_iters,n_frames=500,n_batch=8):
         self.sampler=sampler
         self.n_iters=n_iters
+        self.n_frames=n_frames
         self.n_batch=n_batch
+        self.X=None
+        self.y=None
+        self.i=0
+        self.on_epoch_end()
 
-    def __iter__(self):
-        return self
+    def __len__(self):
+        return self.n_iters
 
-    def __next__(self):
-        i,X,y=0,None,None
-        while(True):
-            if(i==0):
-                X,y=self.sampler.get_frames(n_frames)
-                y=to_categorical(y,12)  
-            y_i=y[i*n_batch:(i+1)*n_batch]
-            X_i=X[i*n_batch:(i+1)*n_batch]
-            X_i=np.array(X_i)
-            X_i=np.expand_dims(X_i,axis=-1)
-            i=(i+1) % self.n_iters
-            yield X_i,y_i
+    def on_epoch_end(self):
+        if(self.i==0):
+            X,y=self.sampler.get_frames(self.n_frames)
+            self.X=np.array(X)
+            self.y=to_categorical(y,12)
+
+    def __getitem__(self, index):
+        y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
+        X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
+        X_i=np.expand_dims(X_i,axis=-1)
+        self.i=(self.i+1) % self.n_iters
+        return X_i,y_i
 
 class LazySampler(object):
     def __init__(self,all_paths,read=None,size=30):
