@@ -4,20 +4,39 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
-class BinaryGenerator(object):
-    def __init__(self,cat_i,sampler,n_frames=500):
-        self.cat_i=cat_i
+class BinaryGenerator(Sequence):
+    def __init__(self,cat,sampler,n_iters,n_frames=100,n_batch=8):
+        self.cat=cat
         self.sampler=sampler
+        self.n_iters=n_iters
         self.n_frames=n_frames
+        self.n_batch=n_batch
+        self.X=None
+        self.y=None
+        self.i=0
+        self.on_epoch_end()
 
-    def __iter__(self):
-        return self
+    def __len__(self):
+        return self.n_iters
 
-    def __next__(self):
-        in_paths=self.sampler.get_category(self.cat_i)
-        selector=lambda path_j: get_cat(path_j)!=self.cat_i
-        out_paths=self.sampler.get_paths(self.n_frames,selector)
-        raise Exception(in_paths)
+    def on_epoch_end(self):
+        if(self.i==0):
+            in_paths=self.sampler.get_category(self.cat)
+            selector=lambda path_j: get_cat(path_j)!=self.cat
+            out_paths=self.sampler.get_paths(self.n_frames,selector)
+            paths=in_paths+out_paths
+            X,y=self.sampler.get_frames(paths)
+            y= [ int(self.cat==y_k) for y_k in y]
+            y=to_categorical(y,2)
+            self.X=X
+            self.y=y
+
+    def __getitem__(self, index):
+        y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
+        X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
+        X_i=np.expand_dims(X_i,axis=-1)
+        self.i=(self.i+1) % self.n_iters
+        return X_i,y_i
 
 class AllGenerator(Sequence):   
     def __init__(self,sampler,n_iters,n_frames=500,n_batch=8):
@@ -57,9 +76,11 @@ class LazySampler(object):
     def __len__(self):
         return len(self.all_paths)	
 
-    def get_frames(self,k=100):
+    def get_frames(self,paths=100):
         X,y=[],[]
-        for path_i in self.get_paths(k):
+        if(type(paths)==int):
+            paths=self.get_paths(k)
+        for path_i in paths:
             name_i=files.get_name(path_i)
             frames=self.read(path_i)
             frames=self.subsample(frames)

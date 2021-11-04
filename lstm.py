@@ -67,9 +67,12 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
 def ens(in_path,out_path,n_cats):
     files.make_dir(out_path)
     sampler=gen.make_lazy_sampler(in_path)
+    n_frames,n_batch=100,8
+    n_iters=int(n_frames/n_batch)
+
     for i in range(n_cats):
         out_i="%s/%d" % (out_path,i)
-        gen_i=gen.BinaryGenerator(i,sampler,n_frames=100)
+        gen_i=gen.BinaryGenerator(i,sampler,n_iters,n_frames)
         train(gen_i,out_i,n_cats=2,n_epochs=5)
 
 def train(generator,out_path,n_cats=12,n_epochs=5):
@@ -107,6 +110,6 @@ def extract(in_path,nn_path,out_path,size=30):
 in_path="../final"
 nn_path="all_108/nn"
 out_path="all_108/feats.txt"
-train(in_path,nn_path)
+#train(in_path,nn_path)
 #extract(in_path,nn_path,out_path)
-#ens(in_path,"../ens",12)
+ens(in_path,"../ens",12)
