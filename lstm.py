@@ -64,12 +64,25 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
         model.add(TimeDistributed(Activation(activ)))
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
-def ens(in_path,out_path,n_cats):
+def ens(in_path,out_path,n_cats=12):
+	files.make_dir(out_path)
+    files.make_dir("%s/nn" % out_path)
+    files.make_dir("%s/feats" % out_path)
+    sampler=gen.make_lazy_sampler(in_path)
+    n_iters=int(100/8)
+    batch_gen=gen.BatchGenerator(sampler,n_iters,n_frames=100,n_batch=8)
+    for i in range(n_cats):
+        gen_i=gen.BinaryGenerator(i,batch_gen)
+        nn_i="%s/nn/%d" % (out_path,i)
+        train(gen_i,nn_i,n_cats=2,n_epochs=5)
+        feat_i="%s/feats/%d" % (out_path,i)
+        extract(in_path,nn_i,feat_i,size=30)
+
+def ens_(in_path,out_path,n_cats):
     files.make_dir(out_path)
     sampler=gen.make_lazy_sampler(in_path)
     n_frames,n_batch=100,8
     n_iters=int(n_frames/n_batch)
-
     for i in range(n_cats):
         out_i="%s/%d" % (out_path,i)
         gen_i=gen.BinaryGenerator(i,sampler,n_iters,n_frames)
