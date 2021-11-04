@@ -40,32 +40,6 @@ class BinaryEns(object):
 #            self.train(frame_i,nn_i,n_epochs=n_epochs)
             self.extract(frame_seqs,nn_i,feats_i)
 
-#class BinaryEns(object):
-#	def __init__(self,binary_gen,funcs=None,dir_names=None):
-#		self.binary_gen=binary_gen
-#		self.nn="nn"
-#		if(funcs and dir_names):
-#			self.ens=EnsTransform(funcs,dir_names,self.nn)
-#		else:
-#			self.ens=None
-			
-#	def __call__(self,ens_path,n_cats,arg_dict=None,use_binary=True):
-#		files.make_dir(ens_path)
-#		nn_path="%s/%s" % (ens_path ,self.nn)
-#		paths=[ "%s/%d" % (nn_path,i)  for i in range(n_cats)]
-#		if(use_binary):
-#			files.make_dir(nn_path)
-#			for i,path_i in enumerate(paths):
-#				self.binary_gen(path_i,i)
-#		if(self.ens):
-#			self.ens(paths,ens_path, arg_dict)
-
-#def ens_template(in_path,out_path,fun):
-#    files.make_dir(out_path)
-#    for in_i in files.top_files(in_path):
-#        out_i="%s/%s" % (out_path,in_i.split('/')[-1])
-#        fun(in_i,out_i)
-
 def binarize_dict(frame_seqs,cat):
     dict_type=type(frame_seqs)
     binary_dict=dict_type()
