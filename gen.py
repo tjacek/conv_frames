@@ -1,20 +1,38 @@
 import random
 import data.imgs,files
 
+class AllGenerator(object):   
+    def __init__(self,sampler,n_iters,n_batch=8):
+        self.sampler=sampler
+        self.n_iters=n_iters
+        self.n_batch=n_batch
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        i,X,y=0,None,None
+        while(True):
+            if(i==0):
+                X,y=self.sampler.get_frames(n_frames)
+                y=to_categorical(y,12)  
+            y_i=y[i*n_batch:(i+1)*n_batch]
+            X_i=X[i*n_batch:(i+1)*n_batch]
+            X_i=np.array(X_i)
+            X_i=np.expand_dims(X_i,axis=-1)
+            i=(i+1) % self.n_iters
+            yield X_i,y_i
+
 class LazySampler(object):
-    def __init__(self,all_paths,read=None,size=30):#,n_batch=8):
+    def __init__(self,all_paths,read=None,size=30):
         if(read is None):
             read=data.imgs.ReadFrames()	
         self.all_paths=all_paths
         self.read=read
         self.subsample=data.imgs.MinLength(size)
-#        self.n_batch=n_batch
 
     def __len__(self):
         return len(self.all_paths)	
-
-#    def n_iters(self):
-#        return int(len(self)/self.n_batch)	
 
     def get_frames(self,k=100):
         X,y=[],[]
@@ -22,8 +40,6 @@ class LazySampler(object):
             name_i=files.get_name(path_i)
             frames=self.read(path_i)
             frames=self.subsample(frames)
-#            print(name_i)
-#            print(len(frames))
             X.append(frames)
             y.append(name_i.get_cat())
         return X,y

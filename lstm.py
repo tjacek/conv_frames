@@ -71,19 +71,7 @@ def train(in_path,out_path,n_frames=1024,n_batch=8):
                 'dims':(128,64,1),"n_cats":12}
     model=make_model(params)
     n_iters=int(n_frames/n_batch)
-    def generator():
-        i,X,y=0,None,None
-        while(True):
-            if(i==0):
-                X,y=sampler.get_frames(n_frames)
-                y=to_categorical(y,12)	
-            y_i=y[i*n_batch:(i+1)*n_batch]
-            X_i=X[i*n_batch:(i+1)*n_batch]
-            X_i=np.array(X_i)
-            X_i=np.expand_dims(X_i,axis=-1)
-            yield X_i,y_i
-            i=(i+1) % n_iters
-#            print("i:%d" % i)
+    generator=gen.AllGenerator(sampler,n_iters,n_batch)
     model.fit_generator(generator(),
     	steps_per_epoch=n_iters,epochs=100)
     model.save(out_path)
@@ -101,13 +89,12 @@ def extract(in_path,nn_path,out_path,size=30):
         frames=np.expand_dims(frames,-1)
         frames=np.expand_dims(frames,0)
         feat_i=extractor.predict(frames)
-#        raise Exception(feat_i.shape)	
         return feat_i
     feat_seq=data.feats.get_feats(in_path,helper)
     feat_seq.save(out_path)
 
 in_path="../final"
-nn_path="test_1024"
-out_path="feats.txt"
-train(in_path,nn_path)
-#extract(in_path,nn_path,out_path)
+nn_path="all_108/nn"
+out_path="all_108/feats.txt"
+#train(in_path,nn_path)
+extract(in_path,nn_path,out_path)
