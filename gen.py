@@ -18,7 +18,7 @@ class BatchGenerator(object):
         self.X=X
         self.y=y
 
-    def get_batch(self, index):
+    def __getitem__(self, index):
         y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
         X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
         X_i=np.expand_dims(X_i,axis=-1)
@@ -36,10 +36,10 @@ class BinaryGenerator(Sequence):
 
     def on_epoch_end(self):
         if(self.batch_gen.i==0):
-            sampler=self.gen_batch.sampler
+            sampler=self.batch_gen.sampler
             in_paths=sampler.get_category(self.cat)
             selector=lambda path_j: get_cat(path_j)!=self.cat
-            out_paths=sampler.get_paths(self.n_frames,selector)
+            out_paths=sampler.get_paths(self.batch_gen.n_frames,selector)
             paths=in_paths+out_paths
             X,y=sampler.get_frames(paths)
             y= [ int(self.cat==y_k) for y_k in y]
@@ -47,7 +47,7 @@ class BinaryGenerator(Sequence):
             self.batch_gen.set(X,y)
 
     def __getitem__(self, index):
-        return self.get_batch(index)
+        return self.batch_gen[index]
 
 class AllGenerator(Sequence):   
     def __init__(self,batch_gen):

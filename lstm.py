@@ -65,7 +65,7 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
 def ens(in_path,out_path,n_cats=12):
-	files.make_dir(out_path)
+    files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
     sampler=gen.make_lazy_sampler(in_path)
