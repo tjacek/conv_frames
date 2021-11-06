@@ -13,6 +13,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.normalization import layer_normalization
 import tensorflow.keras.optimizers
 from keras import regularizers
+import os.path
 import gen,deep,data.feats,learn,files
 
 class FRAME_LSTM(object):
@@ -64,13 +65,13 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
         model.add(TimeDistributed(Activation(activ)))
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
-def ens(in_path,out_path,n_cats=12,n_epochs=5):
+def ens(in_path,out_path,n_cats=12,n_epochs=20):
     files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
     sampler=gen.make_lazy_sampler(in_path)
 #    n_iters=int(100/8)
-    batch_gen=gen.BatchGenerator(sampler,n_frames=100,n_batch=8)
+    batch_gen=gen.BatchGenerator(sampler,n_frames=1000,n_batch=8)
     for i in range(n_cats):
         gen_i=gen.BinaryGenerator(i,batch_gen)
         nn_i="%s/nn/%d" % (out_path,i)
@@ -78,20 +79,23 @@ def ens(in_path,out_path,n_cats=12,n_epochs=5):
         feat_i="%s/feats/%d" % (out_path,i)
         extract(in_path,nn_i,feat_i,size=30)
 
-def train(generator,out_path,n_cats=12,n_epochs=5):
+def train(generator,nn_path,n_cats=12,n_epochs=20):
     if(type(generator)==str):
         n_frames,n_batch=1024,8
         sampler=gen.make_lazy_sampler(in_path)
         batch_gen=gen.BatchGenerator(sampler,n_frames,n_batch)
         generator=gen.AllGenerator(batch_gen)
-    make_model=FRAME_LSTM()
-    params={'seq_len':30,#sampler.subsample.size,
-                'dims':(128,64,1),"n_cats":n_cats}
-    model=make_model(params)
     
+    if(not os.path.exists(nn_path)):
+        make_model=FRAME_LSTM()
+        params={'seq_len':30,#sampler.subsample.size,
+                'dims':(128,64,1),"n_cats":n_cats}
+        model=make_model(params)
+    else:
+        model=learn.base_read_model(None,nn_path)
     model.fit(generator,epochs=n_epochs)
 #    	steps_per_epoch=100,)
-    model.save(out_path)
+    model.save(nn_path)
 
 def extract(in_path,nn_path,out_path,size=30):
     read=data.imgs.ReadFrames()
