@@ -47,6 +47,7 @@ class BinaryGenerator(Sequence):
             selector=lambda path_j: get_cat(path_j)!=self.cat
             out_paths=sampler.get_paths(self.batch_gen.n_frames,selector)
             paths=in_paths+out_paths
+            random.shuffle(paths)
             X,y=sampler.get_frames(paths)
             X=np.array(X)
             y= [ int(self.cat==y_k) for y_k in y]
