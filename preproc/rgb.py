@@ -3,7 +3,7 @@ sys.path.append("..")
 import re
 import files
 
-in_path="../../event1_part1/"
+in_path="../../raw/event12_part3/"
 
 def is_view(path_i):
     id_i= path_i.split("/")[-1]
@@ -21,7 +21,15 @@ def get_name(path_i):
     name_i="%s_%d_%s_%s" % (cat_i,int(train),person_i,view_i)
     return name_i
 
+def select_small(in_path,out_path):
+    paths=[]
+    for path_i in files.top_files(in_path):
+        name_i=files.get_name(path_i)
+        view_i=name_i.split("_")[-1]
+        if(view_i=="1"):
+            paths.append(path_i)
+    files.move_dirs(paths,out_path)
 
-paths=files.find_dirs(in_path,is_view)
-#print(paths)
-files.move_dirs(paths,"../../rgb",get_name)
+#paths=files.find_dirs(in_path,is_view)
+#files.move_dirs(paths,"../../rgb",get_name)
+select_small("../../rgb","../../small/rgb")
