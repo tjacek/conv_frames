@@ -36,8 +36,10 @@ class ActionImgs(dict):
 			out_i="%s/%s.png" % (out_path,name_i)
 			cv2.imwrite(out_i, img_i)
 
-def scale_frames(img_i,dims):
-    return cv2.resize(img_i,dsize=dims,
+def scale_frames(frames,dims):
+    if(type(frames)==list):
+    	return [ scale_frames(frame_i,dims) for frame_i in frames]
+    return cv2.resize(frames,dsize=dims,
 					interpolation=cv2.INTER_CUBIC)
 
 def read_actions(in_path,img_type="grey"):

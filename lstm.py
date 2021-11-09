@@ -17,48 +17,48 @@ import os.path
 import gen,deep,data.feats,learn,files
 
 class FRAME_LSTM(object):
-	def __init__(self,dropout=None,activ='relu',batch=False,l1=None,optim_alg=None):
-		if(optim_alg is None):
-			optim_alg=tensorflow.keras.optimizers.Adam(learning_rate=0.00001)
-		self.dropout=dropout
-		self.activ=activ
-		self.batch=batch
-		self.l1=l1
-		self.optim_alg=optim_alg #"adam"
+    def __init__(self,dropout=None,activ='relu',batch=False,l1=None,optim_alg=None):
+        if(optim_alg is None):
+            optim_alg=tensorflow.keras.optimizers.Adam(learning_rate=0.00001)
+        self.dropout=dropout
+        self.activ=activ
+        self.batch=batch
+        self.l1=l1
+        self.optim_alg=optim_alg #"adam"
 
-	def __call__(self,params):
-		input_shape= (params['seq_len'],*params['dims']) 
-		model=Sequential()
-		n_kern,kern_size,pool_size=[64,64,64],[(5,5),(5,5),(5,5)],[(2,2),(2,2),(2,2)]
-		lstm_cnn(model,n_kern,kern_size,pool_size,self.activ,input_shape)
-		model.add(TimeDistributed(Flatten()))
-		model.add(TimeDistributed(Dense(256)))
-		if( not (self.dropout is None)):
-			model.add(TimeDistributed(Dropout(self.dropout)))	
-		reg=None if(self.l1  is None) else regularizers.l1(self.l1)
-		model.add(TimeDistributed(Dense(128, name="first_dense",
-				kernel_regularizer=reg)))
+    def __call__(self,params):
+        input_shape= (params['seq_len'],*params['dims']) 
+        model=Sequential()
+        n_kern,kern_size,pool_size=[64,64,64],[(5,5),(5,5),(5,5)],[(2,2),(2,2),(2,2)]
+        lstm_cnn(model,n_kern,kern_size,pool_size,self.activ,input_shape)
+        model.add(TimeDistributed(Flatten()))
+        model.add(TimeDistributed(Dense(256)))
+        if( not (self.dropout is None)):
+            model.add(TimeDistributed(Dropout(self.dropout)))	
+        reg=None if(self.l1  is None) else regularizers.l1(self.l1)
+        model.add(TimeDistributed(Dense(128, name="first_dense",kernel_regularizer=reg)))
 
-		model.add(LSTM(64, return_sequences=True, name="lstm_layer"));
+        model.add(LSTM(64, return_sequences=True, name="lstm_layer"));
 		
-		if(self.batch):
-			model.add(GlobalAveragePooling1D(name="prebatch"))
-			model.add(BatchNormalization(name="global_avg"))
-		else:
-			model.add(GlobalAveragePooling1D(name="global_avg"))
-		model.add(Dense(params['n_cats'],activation='softmax'))
+        if(self.batch):
+            model.add(GlobalAveragePooling1D(name="prebatch"))
+            model.add(BatchNormalization(name="global_avg"))
+        else:
+            model.add(GlobalAveragePooling1D(name="global_avg"))
+        model.add(Dense(params['n_cats'],activation='softmax'))
 
-		model.compile(loss='categorical_crossentropy',
-			optimizer=self.optim_alg,#keras.optimizers.Adadelta(),
-			metrics=['accuracy'])
-		model.summary()
-		return model
+        model.compile(loss='categorical_crossentropy',
+            optimizer=self.optim_alg,#keras.optimizers.Adadelta(),
+            metrics=['accuracy'])
+        model.summary()
+        return model
 
 def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
+#    raise Exception(input_shape)
     for i,n_kern_i in enumerate(n_kern):
         if(i==0):
-            conv_i=Conv2D(n_kern_i,kern_size[i], padding='same')
-            model.add(TimeDistributed(conv_i,input_shape=input_shape))
+            conv_i=Conv2D(filters= n_kern_i,kernel_size=kern_size[i], padding='same')
+            model.add(TimeDistributed(conv_i,input_shape=(None,30, 128, 64, 3)))
         else:
             conv_i=Conv2D(n_kern_i,kern_size[i])
             model.add(TimeDistributed(conv_i))
@@ -79,7 +79,7 @@ def ens(in_path,out_path,n_cats=12,n_epochs=25):
         feat_i="%s/feats/%d" % (out_path,i)
         extract(in_path,nn_i,feat_i,size=30)
 
-def train(generator,nn_path,n_cats=12,n_epochs=20):
+def train(generator,nn_path,params,n_epochs=20):
     if(type(generator)==str):
         n_frames,n_batch=512,8
         sampler=gen.make_lazy_sampler(in_path)
@@ -88,8 +88,6 @@ def train(generator,nn_path,n_cats=12,n_epochs=20):
     
     if(not os.path.exists(nn_path)):
         make_model=FRAME_LSTM()
-        params={'seq_len':30,#sampler.subsample.size,
-                'dims':(128,64,1),"n_cats":n_cats}
         model=make_model(params)
     else:
         model=learn.base_read_model(None,nn_path)
@@ -114,13 +112,17 @@ def extract(in_path,nn_path,out_path,size=30):
     feat_seq=data.feats.get_feats(in_path,helper)
     feat_seq.save(out_path)
 
+def single_exp(in_path,out_path,n_epochs=20):
+    params={'seq_len':30,
+            'dims':(128,64,3),"n_cats":12}
+    files.make_dir(out_path)
+    nn_path="%s/nn" % out_path
+    feat_path="%s/feats" % out_path
+    train(in_path,nn_path,params,n_epochs)
+    extract(in_path,nn_path,feat_path)
 
-in_path="../small/final"
-out_path="../small/base_50"
+in_path="../small/final2"
+out_path="../small/color_20"
 
-files.make_dir(out_path)
-nn_path="%s/nn" % out_path
-feat_path="%s/feats" % out_path
-#train(in_path,nn_path,n_epochs=20)
-extract(in_path,nn_path,feat_path)
+single_exp(in_path,out_path,n_epochs=20)
 #ens(in_path,"../ens",12)
