@@ -1,5 +1,5 @@
 import numpy as np
-import cv2,os.path
+import cv2,os.path,math
 #from keras.models import load_model
 import files,data.seqs
 
@@ -103,13 +103,15 @@ class MinLength(object):
         indexes=np.sort(indexes)
         return [frames[i] for i in indexes]
 
-class Downsample(object):
-    def __init__(self,n=2):
-        self.n=n 
+class StaticDownsample(object):
+    def __init__(self,size=30):
+        self.size=size 
 
     def __call__(self,frames):
-        return [frame_i for i,frame_i in enumerate(frames)
-                    if((i%self.n)==0)]
+        scale= math.floor(len(frames)/self.size)
+        return [frames[scale*i] for i in range(self.size)]
+#        return [frame_i for i,frame_i in enumerate(frames)
+#                    if((i%self.n)==0)]
 
 def read_frame_seqs(in_path,read=None):
     if(read is None):

@@ -17,7 +17,7 @@ import os.path
 import gen,deep,data.feats,learn,files
 
 class FRAME_LSTM(object):
-	def __init__(self,dropout=0.5,activ='relu',batch=False,l1=None,optim_alg=None):
+	def __init__(self,dropout=None,activ='relu',batch=False,l1=None,optim_alg=None):
 		if(optim_alg is None):
 			optim_alg=tensorflow.keras.optimizers.Adam(learning_rate=0.00001)
 		self.dropout=dropout
@@ -65,13 +65,13 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
         model.add(TimeDistributed(Activation(activ)))
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
-def ens(in_path,out_path,n_cats=12,n_epochs=20):
+def ens(in_path,out_path,n_cats=12,n_epochs=25):
     files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
     sampler=gen.make_lazy_sampler(in_path)
 #    n_iters=int(100/8)
-    batch_gen=gen.BatchGenerator(sampler,n_frames=1000,n_batch=8)
+    batch_gen=gen.BatchGenerator(sampler,n_frames=512,n_batch=8)
     for i in range(n_cats):
         gen_i=gen.BinaryGenerator(i,batch_gen)
         nn_i="%s/nn/%d" % (out_path,i)
@@ -81,7 +81,7 @@ def ens(in_path,out_path,n_cats=12,n_epochs=20):
 
 def train(generator,nn_path,n_cats=12,n_epochs=20):
     if(type(generator)==str):
-        n_frames,n_batch=1024,8
+        n_frames,n_batch=512,8
         sampler=gen.make_lazy_sampler(in_path)
         batch_gen=gen.BatchGenerator(sampler,n_frames,n_batch)
         generator=gen.AllGenerator(batch_gen)
@@ -99,7 +99,7 @@ def train(generator,nn_path,n_cats=12,n_epochs=20):
 
 def extract(in_path,nn_path,out_path,size=30):
     read=data.imgs.ReadFrames()
-    subsample=data.imgs.MinLength(size)
+    subsample=data.imgs.StaticDownsample(size)#MinLength(size)
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"global_avg")
     def helper(in_path):
@@ -114,9 +114,13 @@ def extract(in_path,nn_path,out_path,size=30):
     feat_seq=data.feats.get_feats(in_path,helper)
     feat_seq.save(out_path)
 
-in_path="../final"
-nn_path="all_108/nn"
-out_path="all_108/feats.txt"
-#train(in_path,nn_path)
-#extract(in_path,nn_path,out_path)
-ens(in_path,"../ens",12)
+
+in_path="../small/final"
+out_path="../small/base_50"
+
+files.make_dir(out_path)
+nn_path="%s/nn" % out_path
+feat_path="%s/feats" % out_path
+#train(in_path,nn_path,n_epochs=20)
+extract(in_path,nn_path,feat_path)
+#ens(in_path,"../ens",12)

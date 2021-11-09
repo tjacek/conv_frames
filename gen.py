@@ -82,7 +82,7 @@ class LazySampler(object):
             read=data.imgs.ReadFrames()	
         self.all_paths=all_paths
         self.read=read
-        self.subsample=data.imgs.MinLength(size)
+        self.subsample=data.imgs.StaticDownsample(size)#MinLength(size)
 
     def __len__(self):
         return len(self.all_paths)	
