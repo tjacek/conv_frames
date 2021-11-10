@@ -27,8 +27,9 @@ class BatchGenerator(object):
     def __getitem__(self, index):
         y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
         X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
-        X_i=np.expand_dims(X_i,axis=-1)
+#        X_i=np.expand_dims(X_i,axis=-1)
         self.i=(self.i+1) % self.size()
+#        raise Exception(X_i.shape)
         return X_i,y_i
 
 class BinaryGenerator(Sequence):
@@ -118,11 +119,11 @@ class LazySampler(object):
                 cat_i.append(path_j)
         return cat_i 
 
-def make_lazy_sampler(in_path):
+def make_lazy_sampler(in_path,read):
     all_paths=files.top_files(in_path)
     all_paths=[ path_i for path_i in all_paths
                     if(is_train(path_i))]
-    return LazySampler(all_paths)
+    return LazySampler(all_paths,read=read)
 
 def get_cat(path_i):
     return files.get_name(path_i).get_cat()
