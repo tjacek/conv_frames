@@ -27,7 +27,8 @@ class BatchGenerator(object):
     def __getitem__(self, index):
         y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
         X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
-#        X_i=np.expand_dims(X_i,axis=-1)
+        if(len(X_i.shape)<5):
+            X_i=np.expand_dims(X_i,axis=-1)
         self.i=(self.i+1) % self.size()
 #        raise Exception(X_i.shape)
         return X_i,y_i

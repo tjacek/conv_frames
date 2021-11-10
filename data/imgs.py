@@ -128,6 +128,7 @@ def read_frame_seqs(in_path,read=None):
 
 class ReadFrames(object):
     def __init__(self,n_split=1,color=cv2.IMREAD_GRAYSCALE):
+        color=cv2.IMREAD_GRAYSCALE if(color=="grey") else cv2.IMREAD_COLOR
         self.n_split=n_split
         self.color=color
 

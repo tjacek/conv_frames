@@ -59,7 +59,7 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
     for i,n_kern_i in enumerate(n_kern):
         if(i==0):
             conv_i=Conv2D(filters= n_kern_i,kernel_size=kern_size[i], padding='same')
-            model.add(TimeDistributed(conv_i,input_shape=(30, 128, 64, 3)))
+            model.add(TimeDistributed(conv_i,input_shape=input_shape))#(30, 128, 64, 3)))
         else:
             conv_i=Conv2D(n_kern_i,kern_size[i])
             model.add(TimeDistributed(conv_i))
@@ -70,13 +70,15 @@ def ens(in_path,out_path,n_cats=12,n_epochs=25):
     files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
-    sampler=gen.make_lazy_sampler(in_path)
-#    n_iters=int(100/8)
+    read=data.imgs.ReadFrames(color="grey")
+    sampler=gen.make_lazy_sampler(in_path,read=read)
+    params={'seq_len':30,
+            'dims':(128,64,1),"n_cats":2}
     batch_gen=gen.BatchGenerator(sampler,n_frames=512,n_batch=8)
-    for i in range(n_cats):
+    for i in range(1,n_cats):
         gen_i=gen.BinaryGenerator(i,batch_gen)
         nn_i="%s/nn/%d" % (out_path,i)
-        train(gen_i,nn_i,n_cats=2,n_epochs=n_epochs)
+        train(gen_i,nn_i,params,n_epochs=n_epochs)
         feat_i="%s/feats/%d" % (out_path,i)
         extract(in_path,nn_i,feat_i,size=30)
 
@@ -98,7 +100,7 @@ def train(generator,nn_path,params,n_epochs=20):
     model.save(nn_path)
 
 def extract(in_path,nn_path,out_path,size=30):
-    read=data.imgs.ReadFrames(color=cv2.IMREAD_COLOR)
+    read=data.imgs.ReadFrames(color="grey")#cv2.IMREAD_COLOR)
     subsample=data.imgs.StaticDownsample(size)#MinLength(size)
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"global_avg")
@@ -123,8 +125,8 @@ def single_exp(in_path,out_path,n_epochs=20):
 #    train(in_path,nn_path,params,n_epochs)
     extract(in_path,nn_path,feat_path)
 
-in_path="../small/final2"
+in_path="../final"
 out_path="../small/color_20"
 
-single_exp(in_path,out_path,n_epochs=20)
-#ens(in_path,"../ens",12)
+#single_exp(in_path,out_path,n_epochs=20)
+ens(in_path,"../ens2",n_epochs=25)
