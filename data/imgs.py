@@ -163,7 +163,8 @@ def tranform_frames(in_path,out_path,fun,whole=False):
         frames.transform(fun)
     frames.save(out_path)
 
-def transform_lazy(in_path,out_path,fun,read=None,recreate=False):
+def transform_lazy(in_path,out_path,fun,read=None,
+            recreate=False,single=False):
     if(read is None):
         read=ReadFrames(color=cv2.IMREAD_COLOR)
     files.make_dir(out_path)
@@ -173,5 +174,9 @@ def transform_lazy(in_path,out_path,fun,read=None,recreate=False):
         if( recreate or not os.path.exists(out_i)):
             frames=[ read(path_j) 
                 for path_j in files.top_files(path_i)]
-            frames=fun(name_i,frames)
+            if(single):
+                frames=[fun(name_i,frame_j) 
+                        for frame_j in frames]
+            else:
+                frames=fun(name_i,frames)
             save_frames(out_i,frames)

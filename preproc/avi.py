@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 import numpy as np
 import cv2
+import background
 import files,data.imgs,data.actions
 
 def to_rgb(in_path,out_path):
@@ -40,6 +41,9 @@ def subs_background(in_path,out_path):
 def simple(in_path,out_path):
     def helper(name_i,frames):
         print(name_i)
+        frames= background.to_grey(frames) 
+        frames=[ cv2.medianBlur(frame_i, 25) 
+                    for frame_i in frames]
         mask_i=np.mean(frames,axis=0)
         frames=[frame_i-mask_i for frame_i in frames]
         return frames
@@ -56,10 +60,39 @@ def remove_noise(in_path,out_path):
         return action_i
     data.actions.transform_lazy(in_path,out_path,helper)
 
+def detect_circles(in_path,out_path):
+    minDist,param1,param2 = 100,30,50  
+    minRadius,maxRadius = 5,20
+    def helper(name_i,frame_i):
+        gray = cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.medianBlur(gray, 25)
+        circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1, 
+            minDist, param1=param1, param2=param2, 
+            minRadius=minRadius, maxRadius=maxRadius)
+        if circles is not None:
+            circles = np.uint16(np.around(circles))
+            for i in circles[0,:]:
+                cv2.circle(frame_i, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        return frame_i
+    data.imgs.transform_lazy(in_path,out_path,helper,single=True)
+
+def find_tag(in_path,out_path):
+    def helper(name_i,frame_i):
+        frame_i[:,:,1][frame_i[:,:,0]!=0]=0
+        frame_i[:,:,1][frame_i[:,:,0]==0]=1 
+        frame_i[:,:,2][frame_i[:,:,2]==0]=0
+        tag=frame_i[:,:,1]*frame_i[:,:,2]
+        tag=cv2.medianBlur(tag,5)
+        return tag
+    data.imgs.transform_lazy(in_path,out_path,helper,
+         recreate=True,single=True)
+
 in_path="../../raw"
 rgb_path="../../rgb"
 box_path="../../box"
 action_path="../../actions"
 #to_rgb(in_path,out_path)
+#simple(rgb_path,box_path)
 #subs_background(box_path,action_path)
-remove_noise(action_path,"../../actions2")
+#remove_noise(action_path,"../../actions2")
+find_tag(rgb_path,"../../tag")

@@ -54,20 +54,19 @@ def read_actions(in_path,img_type="grey"):
 		actions[name_i]=img_i
 	return actions
 
-def get_actions(in_path,fun,out_path=None,dims=(64,64)):
-	frame_seqs=data.imgs.read_frame_seqs(in_path)#,n_split=1)
-	actions=ActionImgs()
-	for name_i,seq_i in frame_seqs.items():
-		print(name_i)
-		actions[name_i]=fun(seq_i)
-	if(dims):
-		actions.scale(dims)
-	if(out_path):
-		actions.save(out_path)
-	return actions
+#def get_actions(in_path,fun,out_path=None,dims=(64,64)):
+#	frame_seqs=data.imgs.read_frame_seqs(in_path)#,n_split=1)
+#	actions=ActionImgs()
+#	for name_i,seq_i in frame_seqs.items():
+#		print(name_i)
+#		actions[name_i]=fun(seq_i)
+#	if(dims):
+#		actions.scale(dims)
+#	if(out_path):
+#		actions.save(out_path)
+#	return actions
 
 def get_actions_lazy(in_path,out_path,fun=None,read=None):
-#    read=data.imgs.ReadFrames(1,cv2.IMREAD_COLOR)
     if(read is None):
         read=data.imgs.ReadFrames(color=cv2.IMREAD_COLOR)
     files.make_dir(out_path)

@@ -15,5 +15,14 @@ def get_box(action_path,out_path):
     with open(out_path, 'w') as f:
         json.dump(dataset, f)
 
+def basic_actions(in_path,out_path):
+    def helper(name_i,frames):
+        return np.mean(frames,axis=0)
+    data.actions.get_actions_lazy(in_path,out_path,helper)
+
+in_path="../../tag"
 action_path="../../actions2"
-get_box(action_path,"train")
+
+#basic_actions(in_path,action_path)
+#get_box(action_path,"train2")
+basic_actions("../../box/frames","../../actions4")
