@@ -34,6 +34,7 @@ def subs_background(in_path,out_path):
         masks = [cv2.morphologyEx(mask_i, cv2.MORPH_OPEN, kernel)
                    for mask_i in masks]
         action_i=np.sum(masks,axis=0)
+        action_i= background.largest_cc(action_i)
         return action_i
 
     data.actions.get_actions_lazy(in_path,out_path,helper)
@@ -89,10 +90,11 @@ def find_tag(in_path,out_path):
 
 in_path="../../raw"
 rgb_path="../../rgb"
+#tag_path
 box_path="../../box"
 action_path="../../actions"
 #to_rgb(in_path,out_path)
 #simple(rgb_path,box_path)
-#subs_background(box_path,action_path)
+subs_background(rgb_path,"../../cc/box")
 #remove_noise(action_path,"../../actions2")
-find_tag(rgb_path,"../../tag")
+#find_tag(rgb_path,"../../tag")

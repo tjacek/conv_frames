@@ -31,14 +31,16 @@ def make_exp(in_path,train_path="train_rect"):
 
 def do_exp(in_path,out_path,train_path="train_rect"):
     files.make_dir(out_path)
-    out_path="%s/frames" % out_path
-    cut_frames(in_path,out_path,train_path)
+    frame_path="%s/frames" % out_path
+    cut_frames(in_path,frame_path,train_path)
+    import box
+    action_path="%s/actions" % out_path
+    box.basic_actions(frame_path,action_path)
 
 if __name__ == "__main__":
     action_path="../../actions"
-    train_path="train"
-#    make_exp(action_path,train_path)
-#    files.make_dir(out_path)
+    train_path="train_3"
+    make_exp(action_path,train_path)
     in_path="../../rgb"
     out_path="../../box"  
-    do_exp(in_path,out_path,train_path)
+#    do_exp(in_path,out_path,train_path)

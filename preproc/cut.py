@@ -101,9 +101,9 @@ def make_action_state(in_path,train_path="train",cut_fun=None,default_value=None
     return ActionState(actions_dict,train_data,train_path,cut_fun)
 
 if __name__ == "__main__":
-    in_path="../../../Downloads/AA/depth/actions"
+    in_path="../../actions_base"
     state=make_action_state(in_path)
 #    gui.gui_exp(state)
-    cut_actions(in_path,"train","actions")
+    cut_actions(in_path,"train_3","actions")
 #    in_path="../../../Downloads/AA/depth/rename"
 #    cut_frames(in_path,"train","frames")

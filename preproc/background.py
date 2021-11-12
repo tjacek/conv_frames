@@ -52,12 +52,16 @@ def to_grey(frames):
     return cv2.cvtColor(frames, cv2.COLOR_BGR2GRAY)
 
 def final_preproc(in_path,out_path):
-    def helper(name_i,frames):
-        return to_grey(frames)
-    data.imgs.transform_lazy(in_path,out_path,helper)
+    def helper(name_i,img_i):
+        img_i=cv2.resize(img_i,dsize=(64,128),
+                    interpolation=cv2.INTER_CUBIC)
+        return img_i
+#        return to_grey(frames)
+    data.imgs.transform_lazy(in_path,out_path,helper,single=True)
 
-in_path="../../Background/raw"
-action_path="../../actions"
-out_path="../../actions2"
-#substract(in_path,action_path,out_path)
-final_preproc("../../box/frames","../../final")
+if __name__ == "__main__":
+    in_path="../../Background/raw"
+    action_path="../../actions"
+    out_path="../../actions2"
+    #substract(in_path,action_path,out_path)
+    final_preproc("../../cc/actions/frames","../../cc/final")
