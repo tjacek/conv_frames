@@ -4,6 +4,35 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
+def AgumDecorator(object):
+    def __init__(self,generator,agum=None):
+        if(agum is None):
+            agum=flip
+        self.generator=generator
+        self.agum=agum
+        self.current_batch=None
+
+    def __len__(self):
+        return 2*len(self.generator)
+
+    def on_epoch_end(self):
+        self.generator.on_epoch_end()
+
+    def __getitem__(self, index):
+        if(self.current_batch is None):
+            self.current_batch=self.generator[index]
+            return self.current_batch
+        else:
+            X,y=self.current_batch
+            self.current_batch=None
+            X=self.agum(X)
+            y=y+y
+            return X,y
+
+def flip(frames):
+    return [np.flip(img_i,axis=0) 
+                for frame_i in frames]
+
 class BatchGenerator(object):
     def __init__(self,sampler,n_frames=100,n_batch=8):
         self.sampler=sampler
@@ -13,11 +42,10 @@ class BatchGenerator(object):
         self.y=None
         self.i=0
    
-    def size(self):
-        return int(self.X.shape[0]/self.n_batch)
+#    def size(self):
+#        return int(self.X.shape[0]/self.n_batch)
 
     def n_iters(self):
-#        raise Exception(self.X.shape[0])
         return int(self.X.shape[0]/self.n_batch)
 
     def set(self,X,y):
