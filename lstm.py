@@ -55,7 +55,6 @@ class FRAME_LSTM(object):
         return model
 
 def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
-#    raise Exception(input_shape)
     for i,n_kern_i in enumerate(n_kern):
         if(i==0):
             conv_i=Conv2D(filters= n_kern_i,kernel_size=kern_size[i], padding='same')
@@ -96,12 +95,11 @@ def train(generator,nn_path,params,n_epochs=20):
     else:
         model=learn.base_read_model(None,nn_path)
     model.fit(generator,epochs=n_epochs)
-#    	steps_per_epoch=100,)
     model.save(nn_path)
 
 def extract(in_path,nn_path,out_path,size=30):
-    read=data.imgs.ReadFrames(color="grey")#cv2.IMREAD_COLOR)
-    subsample=data.imgs.StaticDownsample(size)#MinLength(size)
+    read=data.imgs.ReadFrames(color="color")#cv2.IMREAD_COLOR)
+    subsample=data.imgs.MinLength(size)# StaticDownsample(size)
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"global_avg")
     def helper(in_path):
@@ -118,15 +116,18 @@ def extract(in_path,nn_path,out_path,size=30):
 
 def single_exp(in_path,out_path,n_epochs=20):
     params={'seq_len':30,
-            'dims':(128,64,3),"n_cats":12}
+            'dims':(128,64,3),"n_cats":9}
+    n_frames,n_batch=None,8
+    batch_gen=gen.make_batch_gen(in_path,n_frames,n_batch,read="color")
+    generator=gen.AllGenerator(batch_gen,n_cats=params["n_cats"])
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
     feat_path="%s/feats" % out_path
-#    train(in_path,nn_path,params,n_epochs)
+    train(generator,nn_path,params,n_epochs)
     extract(in_path,nn_path,feat_path)
 
-in_path="../final"
-out_path="../small/color_20"
+in_path="../florence"
+out_path="../color"
 
-#single_exp(in_path,out_path,n_epochs=20)
-ens(in_path,"../ens2",n_epochs=25)
+single_exp(in_path,out_path,n_epochs=120)
+#ens(in_path,"../ens2",n_epochs=25)

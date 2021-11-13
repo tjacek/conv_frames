@@ -17,7 +17,8 @@ class BatchGenerator(object):
         return int(self.X.shape[0]/self.n_batch)
 
     def n_iters(self):
-        return int(self.n_frames/self.n_batch)
+#        raise Exception(self.X.shape[0])
+        return int(self.X.shape[0]/self.n_batch)
 
     def set(self,X,y):
         print(X.shape)
@@ -30,7 +31,6 @@ class BatchGenerator(object):
         if(len(X_i.shape)<5):
             X_i=np.expand_dims(X_i,axis=-1)
         self.i=(self.i+1) % self.size()
-#        raise Exception(X_i.shape)
         return X_i,y_i
 
 class BinaryGenerator(Sequence):
@@ -60,8 +60,9 @@ class BinaryGenerator(Sequence):
         return self.batch_gen[index]
 
 class AllGenerator(Sequence):   
-    def __init__(self,batch_gen):
+    def __init__(self,batch_gen,n_cats=12):
         self.batch_gen=batch_gen
+        self.n_cats=n_cats
         self.on_epoch_end()
 
     def __len__(self):
@@ -72,7 +73,7 @@ class AllGenerator(Sequence):
             sampler= self.batch_gen.sampler
             X,y=sampler.get_frames(self.batch_gen.n_frames)
             X=np.array(X)
-            y=to_categorical(y,12)
+            y=to_categorical(y, self.n_cats)
             self.batch_gen.set(X,y)
 
     def __getitem__(self, index):
@@ -91,6 +92,8 @@ class LazySampler(object):
 
     def get_frames(self,paths=100):
         X,y=[],[]
+        if(paths is None):
+            paths=self.all_paths
         if(type(paths)==int):
             paths=self.get_paths(paths)
         for path_i in paths:
@@ -103,10 +106,7 @@ class LazySampler(object):
 
     def get_paths(self,k=100,selector=None):
         if(selector):
-            paths=[]
-            for path_j in self.all_paths:
-                if(selector(path_j)):
-                    paths.append(path_j)
+            paths=self.select_paths(selector)
         else:
             paths=self.all_paths
         random.shuffle(paths)
@@ -120,17 +120,31 @@ class LazySampler(object):
                 cat_i.append(path_j)
         return cat_i 
 
+    def select_paths(self,selector):
+        paths=[]
+        for path_j in self.all_paths:
+            if(selector(path_j)):
+                paths.append(path_j)
+        return paths
+
+def make_batch_gen(in_path,n_frames,n_batch,read="color"):
+    sampler=make_lazy_sampler(in_path,read)
+    return BatchGenerator(sampler,n_frames,n_batch)
+
 def make_lazy_sampler(in_path,read):
     all_paths=files.top_files(in_path)
     all_paths=[ path_i for path_i in all_paths
                     if(is_train(path_i))]
+    if(type(read)==str):
+        read=data.imgs.ReadFrames(color=read)
     return LazySampler(all_paths,read=read)
 
 def get_cat(path_i):
     return files.get_name(path_i).get_cat()
 
 def is_train(path_i):
-    return (files.get_name(path_i).get_person()==1)
+    name_i=files.get_name(path_i)
+    return (name_i.get_person()%2)==1
 
 if __name__ == "__main__":
     in_path="../final"
