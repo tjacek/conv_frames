@@ -4,7 +4,7 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
-def AgumDecorator(object):
+class AgumDecorator(Sequence):
     def __init__(self,generator,agum=None):
         if(agum is None):
             agum=flip
@@ -21,16 +21,17 @@ def AgumDecorator(object):
     def __getitem__(self, index):
         if(self.current_batch is None):
             self.current_batch=self.generator[index]
+
             return self.current_batch
         else:
             X,y=self.current_batch
             self.current_batch=None
             X=self.agum(X)
-            y=y+y
+#            y=y+y
             return X,y
 
 def flip(frames):
-    return [np.flip(img_i,axis=0) 
+    return [np.flip(frame_i,axis=0) 
                 for frame_i in frames]
 
 class BatchGenerator(object):
@@ -58,7 +59,7 @@ class BatchGenerator(object):
         X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
         if(len(X_i.shape)<5):
             X_i=np.expand_dims(X_i,axis=-1)
-        self.i=(self.i+1) % self.size()
+        self.i=(self.i+1) % self.n_iters()#self.size()
         return X_i,y_i
 
 class BinaryGenerator(Sequence):

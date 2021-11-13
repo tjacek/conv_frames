@@ -88,7 +88,6 @@ def train(generator,nn_path,params,n_epochs=20):
         sampler=gen.make_lazy_sampler(in_path,read=read)
         batch_gen=gen.BatchGenerator(sampler,n_frames,n_batch)
         generator=gen.AllGenerator(batch_gen)
-    
     if(not os.path.exists(nn_path)):
         make_model=FRAME_LSTM()
         model=make_model(params)
@@ -120,6 +119,9 @@ def single_exp(in_path,out_path,n_epochs=20):
     n_frames,n_batch=None,8
     batch_gen=gen.make_batch_gen(in_path,n_frames,n_batch,read="color")
     generator=gen.AllGenerator(batch_gen,n_cats=params["n_cats"])
+
+    generator=gen.AgumDecorator(generator)
+
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
     feat_path="%s/feats" % out_path
@@ -127,7 +129,7 @@ def single_exp(in_path,out_path,n_epochs=20):
     extract(in_path,nn_path,feat_path)
 
 in_path="../florence"
-out_path="../color"
+out_path="../agum"
 
 single_exp(in_path,out_path,n_epochs=120)
 #ens(in_path,"../ens2",n_epochs=25)
