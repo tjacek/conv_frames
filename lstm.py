@@ -30,7 +30,7 @@ class FRAME_LSTM(object):
     def __call__(self,params):
         input_shape= (params['seq_len'],*params['dims']) 
         model=Sequential()
-        n_kern,kern_size,pool_size=[64,64,64],[(5,5),(5,5),(5,5)],[(2,2),(2,2),(2,2)]
+        n_kern,kern_size,pool_size=[96,64,64],[(5,5),(5,5),(5,5)],[(2,2),(2,2),(2,2)]
         lstm_cnn(model,n_kern,kern_size,pool_size,self.activ,input_shape)
         model.add(TimeDistributed(Flatten()))
         model.add(TimeDistributed(Dense(256)))
@@ -69,14 +69,14 @@ def ens(in_path,out_path,n_cats=12,n_epochs=25):
     files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
-    read=data.imgs.ReadFrames(color="grey")
+    read=data.imgs.ReadFrames(color="color")
     sampler=gen.make_lazy_sampler(in_path,read=read)
     params={'seq_len':30,
             'dims':(128,64,3),"n_cats":2}
     batch_gen=gen.BatchGenerator(sampler,n_frames=None,n_batch=8)
     for i in range(1,n_cats):
         gen_i=gen.BinaryGenerator(i,batch_gen)
-        gen_i=en.AgumDecorator(gen_i)
+        gen_i=gen.AgumDecorator(gen_i)
         nn_i="%s/nn/%d" % (out_path,i)
         train(gen_i,nn_i,params,n_epochs=n_epochs)
         feat_i="%s/feats/%d" % (out_path,i)
@@ -132,11 +132,11 @@ def single_exp(in_path,out_path,n_epochs=20):
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
     feat_path="%s/feats" % out_path
-#    train(generator,nn_path,params,n_epochs)
+    train(generator,nn_path,params,n_epochs)
     extract(in_path,nn_path,feat_path)
 
 in_path="../florence"
-out_path="../agum3"
+out_path="../agum4"
 
-single_exp(in_path,out_path,n_epochs=120)
-#ens(in_path,"../ens2",n_epochs=25)
+#single_exp(in_path,out_path,n_epochs=120)
+ens(in_path,"../ens",n_cats=9,n_epochs=25)
