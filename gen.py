@@ -30,7 +30,7 @@ class AgumDecorator(Sequence):
             return X,y
 
 def flip(frames):
-    frames= [np.flip(frame_i,axis=0) 
+    frames= [np.flip(frame_i,axis=1) 
                 for frame_i in frames]
     return frames
 

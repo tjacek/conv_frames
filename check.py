@@ -39,7 +39,15 @@ def empty_dirs(in_path):
         len_i=len(files.top_files(path_i))
         if(len_i==0):
             empty.append(path_i)
+
     print(empty)
 
-in_path="../box/frames"
-empty_dirs(in_path)
+def check_agum(in_path,out_path):
+    import gen
+    def helper(name_i,frames):
+        return gen.flip(frames)
+    data.imgs.transform_lazy(in_path,out_path,
+        helper,recreate=True)
+
+in_path="../cc/florence"
+check_agum(in_path,"../cc/agum")
