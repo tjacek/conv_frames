@@ -72,10 +72,11 @@ def ens(in_path,out_path,n_cats=12,n_epochs=25):
     read=data.imgs.ReadFrames(color="grey")
     sampler=gen.make_lazy_sampler(in_path,read=read)
     params={'seq_len':30,
-            'dims':(128,64,1),"n_cats":2}
-    batch_gen=gen.BatchGenerator(sampler,n_frames=512,n_batch=8)
+            'dims':(128,64,3),"n_cats":2}
+    batch_gen=gen.BatchGenerator(sampler,n_frames=None,n_batch=8)
     for i in range(1,n_cats):
         gen_i=gen.BinaryGenerator(i,batch_gen)
+        gen_i=en.AgumDecorator(gen_i)
         nn_i="%s/nn/%d" % (out_path,i)
         train(gen_i,nn_i,params,n_epochs=n_epochs)
         feat_i="%s/feats/%d" % (out_path,i)
@@ -97,7 +98,7 @@ def train(generator,nn_path,params,n_epochs=20):
     model.save(nn_path)
 
 def extract(in_path,nn_path,out_path,size=30):
-    read=data.imgs.ReadFrames(color="color")#cv2.IMREAD_COLOR)
+    read=data.imgs.ReadFrames(color="color")
     subsample=data.imgs.MinLength(size)# StaticDownsample(size)
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"global_avg")
@@ -129,7 +130,7 @@ def single_exp(in_path,out_path,n_epochs=20):
     extract(in_path,nn_path,feat_path)
 
 in_path="../florence"
-out_path="../agum"
+out_path="../agum2"
 
 single_exp(in_path,out_path,n_epochs=120)
 #ens(in_path,"../ens2",n_epochs=25)

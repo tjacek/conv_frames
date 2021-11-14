@@ -26,13 +26,13 @@ class AgumDecorator(Sequence):
         else:
             X,y=self.current_batch
             self.current_batch=None
-            X=self.agum(X)
-#            y=y+y
+            X=np.array([self.agum(seq_i) for seq_i in X])
             return X,y
 
 def flip(frames):
-    return [np.flip(frame_i,axis=0) 
+    frames= [np.flip(frame_i,axis=0) 
                 for frame_i in frames]
+    return frames
 
 class BatchGenerator(object):
     def __init__(self,sampler,n_frames=100,n_batch=8):
@@ -42,9 +42,6 @@ class BatchGenerator(object):
         self.X=None
         self.y=None
         self.i=0
-   
-#    def size(self):
-#        return int(self.X.shape[0]/self.n_batch)
 
     def n_iters(self):
         return int(self.X.shape[0]/self.n_batch)
