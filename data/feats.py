@@ -99,5 +99,11 @@ def get_feats(in_path,fun):
     feats=Feats()
     for i,path_i in enumerate(files.top_files(in_path)):
         name_i=files.get_name(path_i)
-        feats[name_i]=fun(path_i)
+        result=fun(path_i)
+        if(type(result)==list):
+            for j,feat_j in enumerate(result):
+                name_j=files.Name( "%s_%d" % (name_i,j))
+                feats[name_j]=feat_j
+        else:
+            feats[name_i]=fun(path_i)
     return feats
