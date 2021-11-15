@@ -2,8 +2,20 @@ import numpy as np
 from tensorflow.keras.layers import Input,Dense,Flatten
 from tensorflow.keras.models import Model
 from keras.models import load_model
+from tensorflow.keras.utils import Sequence
 import data.actions,data.imgs,data.seqs
 import sim_core,deep,learn,files
+
+class SimGen(Sequence):
+    def __init__(self,path_dict,n_frames=3):
+        self.path_dict=path_dict
+        self.n_frames=n_frames
+
+def make_sim_gen(in_path,n_frames):
+    paths=files.get_path_dict(in_path)
+    train= dict(files.split(paths)[0])
+    print(train.keys())
+    return SimGen(train,n_frames)
 
 class FrameSim(object):
     def __init__(self,n_hidden=128):
@@ -66,28 +78,28 @@ def get_frames(in_path,out_path,fun=None):
         fun=center_frame
     data.actions.get_actions_eff(in_path,fun,out_path,dims=None)
 
-def read_paths(in_path,persons):
-    persons=set(persons)
-    paths=[] 
-    for path_i in files.top_files(in_path):
-        name_i=files.Name(path_i.split("/")[-1]).clean()
-        if( (name_i.get_person() %2)==1):
-            person_i= name_i.split("_")[2]
-            if(person_i in persons):
-                paths.append(path_i)
-    return paths
+#def read_paths(in_path,persons):
+#    persons=set(persons)
+#    paths=[] 
+#    for path_i in files.top_files(in_path):
+#        name_i=files.Name(path_i.split("/")[-1]).clean()
+#        if( (name_i.get_person() %2)==1):
+#            person_i= name_i.split("_")[2]
+#            if(person_i in persons):
+#                paths.append(path_i)
+#    return paths
 
 def sim_exp(in_path,out_path):
     files.make_dir(out_path)
     frame_path="%s/frames" % out_path
-#    get_frames(in_path,frame_path)
     nn_path="%s/nn" % out_path
 #    train(frame_path,nn_path,n_epochs=30,n_batch=8)
     seq_path="%s/seqs" % out_path
     extract(in_path,nn_path,seq_path)
 
-in_path="../final"
-sim_exp(in_path,"../center")
+in_path="../cc/florence"
+make_sim_gen(in_path,3)
+#sim_exp(in_path,"../center")
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
 #train("../median",nn_path)

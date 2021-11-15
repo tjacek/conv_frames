@@ -10,7 +10,6 @@ class AgumDecorator(Sequence):
             agum=flip
         self.generator=generator
         self.agum=agum
-#        self.current_batch=None
 
     def __len__(self):
         return 2*len(self.generator)
@@ -26,14 +25,7 @@ class AgumDecorator(Sequence):
             return X,y
         else:
             return self.generator[index]
-#        if(self.current_batch is None):
-#            self.current_batch=self.generator[index]
-#            return self.current_batch
-#        else:
-#            X,y=self.current_batch
-#            self.current_batch=None
-#            X=np.array([self.agum(seq_i) for seq_i in X])
-#            return X,y
+
 
 def flip(frames):
     frames= [np.flip(frame_i,axis=1) 
@@ -64,11 +56,6 @@ class BatchGenerator(object):
         X_i=self.X[index*self.n_batch:(index+1)*self.n_batch]
         if(len(X_i.shape)<5):
             X_i=np.expand_dims(X_i,axis=-1)
-#        y_i=self.y[self.i*self.n_batch:(self.i+1)*self.n_batch]
-#        X_i=self.X[self.i*self.n_batch:(self.i+1)*self.n_batch]
-#        if(len(X_i.shape)<5):
-#            X_i=np.expand_dims(X_i,axis=-1)
-#        self.i=(self.i+1) % self.n_iters()#self.size()
         print("\n %d %d \n" % (index,raw_index))
         return X_i,y_i
 

@@ -61,18 +61,25 @@ def make_dir(path):
     if(not os.path.isdir(path)):
         os.mkdir(path)
 
-def get_paths(dir_path,sufixes):
-    return {sufix_i:"%s/%s"%(dir_path,sufix_i) for sufix_i in sufixes}
+#def get_paths(dir_path,sufixes):
+#    return {sufix_i:"%s/%s"%(dir_path,sufix_i) for sufix_i in sufixes}
 
-def prepare_dirs(basic_path,sub_dirs):
-    make_dir(basic_path)
-    paths=get_paths(basic_path,sub_dirs)
+#def prepare_dirs(basic_path,sub_dirs):
+#    make_dir(basic_path)
+#    paths=get_paths(basic_path,sub_dirs)
+#    return paths
+
+#def ens_paths(dir_path,common_path,binary_path):
+#    binary="%s/%s" % (dir_path,binary_path)
+#    common=["%s/%s" % (dir_path,path_i) for path_i in common_path]
+#    return {"common":common ,"binary":binary}
+
+def get_path_dict(in_path):
+    paths={}
+    for path_i in top_files(in_path):
+        name_i=get_name(path_i)
+        paths[name_i]=top_files(path_i)
     return paths
-
-def ens_paths(dir_path,common_path,binary_path):
-    binary="%s/%s" % (dir_path,binary_path)
-    common=["%s/%s" % (dir_path,path_i) for path_i in common_path]
-    return {"common":common ,"binary":binary}
 
 def find_dirs(in_path,pred=None):
     if(pred is None):
