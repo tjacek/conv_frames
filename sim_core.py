@@ -15,6 +15,13 @@ def pair_dataset(data_dict):
     X=[X[:,0],X[:,1]]
     return X,y
 
+def all_pairs(names):
+    pairs=[]
+    for i,name_i in enumerate( names):
+        for name_j in names[i:]:
+            pairs.append((name_i,name_j))
+    return pairs
+
 def all_cat(name_i,name_j):
     return int(name_i.get_cat()==name_j.get_cat())
 

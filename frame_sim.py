@@ -3,19 +3,52 @@ from tensorflow.keras.layers import Input,Dense,Flatten
 from tensorflow.keras.models import Model
 from keras.models import load_model
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.utils import to_categorical
 import data.actions,data.imgs,data.seqs
 import sim_core,deep,learn,files
 
 class SimGen(Sequence):
-    def __init__(self,path_dict,n_frames=3):
-        self.path_dict=path_dict
+    def __init__(self,path_dict,n_frames=3,batch_size=32):
+        self.sampler=FrameSampler(path_dict)
         self.n_frames=n_frames
+        self.names=sim_core.all_pairs(list(path_dict.keys()))
+        self.batch_size=batch_size
+        self.n_batch=int(len(self.names)/self.batch_size)
 
-def make_sim_gen(in_path,n_frames):
+    def __len__(self):
+        return self.n_frames*self.n_batch
+        
+    def __getitem__(self, i):
+        i= i % self.n_batch
+        pairs_i=self.names[i*self.batch_size:(i+1)*self.batch_size]
+        X,y=[],[]
+        for name_a,name_b in pairs_i:
+            x_a=self.sampler(name_a)
+            x_b=self.sampler(name_b)
+            X.append((x_a,x_b))
+            y.append(sim_core.all_cat(name_a,name_b))
+        X=np.array(X)
+        X=[X[:,0],X[:,1]]
+        y=to_categorical(y)
+        return X,y
+
+class FrameSampler(object):
+    def __init__(self,path_dict,read="color"):
+        if(type(read)==str):
+            read=data.imgs.ReadFrames(color=read)
+        self.path_dict=path_dict
+        self.read=read
+
+    def __call__(self,name_j):
+        seq_j=self.path_dict[name_j]
+        index=np.random.randint(len(seq_j),size=None)
+        frame_path=seq_j[index]
+        return self.read(frame_path)
+
+def make_sim_gen(in_path,n_frames,n_batch=32):
     paths=files.get_path_dict(in_path)
     train= dict(files.split(paths)[0])
-    print(train.keys())
-    return SimGen(train,n_frames)
+    return SimGen(train,n_frames,n_batch)
 
 class FrameSim(object):
     def __init__(self,n_hidden=128):
@@ -42,16 +75,23 @@ class FrameSim(object):
         model = Model(inputs, x)
         return model
 
-def train(in_path,out_path,n_epochs=5,n_batch=8):
+def train(in_path,out_path,n_epochs=5,n_frames=3,n_batch=32):
     make_nn=FrameSim()
-    def read(in_path):
-        paths=read_paths(in_path,["1","2","3"])
-        print(paths)
-        data_dict=data.actions.from_paths(paths)
-        data_dict.add_dim()
-        return data_dict
-    train_sim=learn.SimTrain(read,make_nn,n_batch=n_batch)
-    train_sim(in_path,out_path,n_epochs)
+    sim_gen=make_sim_gen(in_path,n_frames,n_batch)
+    params={"n_cats":9,"input_shape":(128,64,3)    }
+    sim_nn=make_nn(params)
+    model,extractor=make_nn(params)
+    model.fit(sim_gen,epochs=n_epochs)
+    if(out_path):
+        extractor.save(out_path)
+#    def read(in_path):
+#        paths=read_paths(in_path,["1","2","3"])
+#        print(paths)
+#        data_dict=data.actions.from_paths(paths)
+#        data_dict.add_dim()
+#        return data_dict
+#    train_sim=learn.SimTrain(read,make_nn,n_batch=n_batch)
+#    train_sim(in_path,out_path,n_epochs)
 
 def extract(in_path,nn_path,out_path):
     read=data.imgs.ReadFrames()
@@ -98,9 +138,9 @@ def sim_exp(in_path,out_path):
     extract(in_path,nn_path,seq_path)
 
 in_path="../cc/florence"
-make_sim_gen(in_path,3)
+#make_sim_gen(in_path,3)
 #sim_exp(in_path,"../center")
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
-#train("../median",nn_path)
+train(in_path,"sim_nn",n_epochs=5)
 #extract(in_path,nn_path,out_path)

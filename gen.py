@@ -26,7 +26,6 @@ class AgumDecorator(Sequence):
         else:
             return self.generator[index]
 
-
 def flip(frames):
     frames= [np.flip(frame_i,axis=1) 
                 for frame_i in frames]
