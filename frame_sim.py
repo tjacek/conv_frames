@@ -37,7 +37,7 @@ class FrameSampler(object):
         if(type(read)==str):
             read=data.imgs.ReadFrames(color=read)
         if(dist is None):
-            dist=center_dist #uniform_dist
+            dist=nonuniform_dist
         self.path_dict=path_dict
         self.read=read
         self.dist=dist
@@ -58,6 +58,18 @@ def uniform_dist(seq_j):
 
 def center_dist(seq_j):
     return int(len(seq_j)/2)
+
+def nonuniform_dist(seq_i):
+    size=len(seq_i)
+    inc,dec=np.arange(size),np.flip(np.arange(size))
+    dist=np.amin(np.array([inc,dec]),axis=0)
+    dist=dist.astype(float)
+    dist=dist**2
+    if(np.sum(dist)==0):
+        dist.fill(1.0)
+    dist/=np.sum(dist)
+    i=np.random.choice(np.arange(size),1,p=dist)[0]
+    return i
 
 class FrameSim(object):
     def __init__(self,n_hidden=128):
@@ -107,10 +119,6 @@ def extract(in_path,nn_path,out_path):
     feat_seq=data.seqs.transform_seqs(in_path,read,helper)
     feat_seq.save(out_path)
 
-#def center_frame(frames):
-#    center= int(len(frames)/2)
-#    return frames[center]
-
 def median(frames):
     return np.median(frames,axis=0)
 
@@ -119,15 +127,16 @@ def get_frames(in_path,out_path,fun=None):
         fun=center_frame
     data.actions.get_actions_eff(in_path,fun,out_path,dims=None)
 
-def sim_exp(in_path,out_path,n_epochs=50,n_batch=32):
+def sim_exp(in_path,out_path,n_epochs=20,n_batch=32):
     files.make_dir(out_path)
 #    frame_path="%s/frames" % out_path
     nn_path="%s/nn" % out_path
-    train(in_path,nn_path,n_epochs=n_epochs,n_batch=n_batch)
+    train(in_path,nn_path,n_epochs=n_epochs,n_frames=3,
+        n_batch=n_batch)
     seq_path="%s/seqs" % out_path
     extract(in_path,nn_path,seq_path)
 
-in_path="../florence"
+in_path="../cc/florence"
 #make_sim_gen(in_path,3)
 sim_exp(in_path,"../common",n_epochs=20)
 #median(in_path,"../median")
