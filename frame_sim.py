@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Input,Dense,Flatten
 from tensorflow.keras.models import Model
 from keras.models import load_model
 from tensorflow.keras.utils import Sequence
-from tensorflow.keras.utils import to_categorical
+#from tensorflow.keras.utils import to_categorical
 import data.actions,data.imgs,data.seqs
 import sim_core,deep,learn,files
 
@@ -29,19 +29,22 @@ class SimGen(Sequence):
             y.append(sim_core.all_cat(name_a,name_b))
         X=np.array(X)
         X=[X[:,0],X[:,1]]
-        y=to_categorical(y)
-        return X,y
+#        y=to_categorical(y)
+        return X,np.array(y)
 
 class FrameSampler(object):
-    def __init__(self,path_dict,read="color"):
+    def __init__(self,path_dict,dist=None,read="color"):
         if(type(read)==str):
             read=data.imgs.ReadFrames(color=read)
+        if(dist is None):
+            dist=center_dist #uniform_dist
         self.path_dict=path_dict
         self.read=read
+        self.dist=dist
 
     def __call__(self,name_j):
         seq_j=self.path_dict[name_j]
-        index=np.random.randint(len(seq_j),size=None)
+        index=self.dist(seq_j)
         frame_path=seq_j[index]
         return self.read(frame_path)
 
@@ -49,6 +52,12 @@ def make_sim_gen(in_path,n_frames,n_batch=32):
     paths=files.get_path_dict(in_path)
     train= dict(files.split(paths)[0])
     return SimGen(train,n_frames,n_batch)
+
+def uniform_dist(seq_j):
+    return np.random.randint(len(seq_j),size=None)
+
+def center_dist(seq_j):
+    return int(len(seq_j)/2)
 
 class FrameSim(object):
     def __init__(self,n_hidden=128):
@@ -75,7 +84,7 @@ class FrameSim(object):
         model = Model(inputs, x)
         return model
 
-def train(in_path,out_path,n_epochs=5,n_frames=3,n_batch=32):
+def train(in_path,out_path,n_epochs=5,n_frames=1,n_batch=32):
     make_nn=FrameSim()
     sim_gen=make_sim_gen(in_path,n_frames,n_batch)
     params={"n_cats":9,"input_shape":(128,64,3)    }
@@ -98,9 +107,9 @@ def extract(in_path,nn_path,out_path):
     feat_seq=data.seqs.transform_seqs(in_path,read,helper)
     feat_seq.save(out_path)
 
-def center_frame(frames):
-    center= int(len(frames)/2)
-    return frames[center]
+#def center_frame(frames):
+#    center= int(len(frames)/2)
+#    return frames[center]
 
 def median(frames):
     return np.median(frames,axis=0)
@@ -114,7 +123,7 @@ def sim_exp(in_path,out_path):
     files.make_dir(out_path)
     frame_path="%s/frames" % out_path
     nn_path="%s/nn" % out_path
-#    train(frame_path,nn_path,n_epochs=30,n_batch=8)
+    train(frame_path,nn_path,n_epochs=30,n_batch=8)
     seq_path="%s/seqs" % out_path
     extract(in_path,nn_path,seq_path)
 
@@ -123,5 +132,5 @@ in_path="../cc/florence"
 #sim_exp(in_path,"../center")
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
-#train(in_path,"sim_nn",n_epochs=5)
+train(in_path,"sim_nn",n_epochs=5)
 extract(in_path,"sim_nn","seqs")
