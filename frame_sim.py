@@ -119,18 +119,18 @@ def get_frames(in_path,out_path,fun=None):
         fun=center_frame
     data.actions.get_actions_eff(in_path,fun,out_path,dims=None)
 
-def sim_exp(in_path,out_path):
+def sim_exp(in_path,out_path,n_epochs=50,n_batch=32):
     files.make_dir(out_path)
-    frame_path="%s/frames" % out_path
+#    frame_path="%s/frames" % out_path
     nn_path="%s/nn" % out_path
-    train(frame_path,nn_path,n_epochs=30,n_batch=8)
+    train(in_path,nn_path,n_epochs=n_epochs,n_batch=n_batch)
     seq_path="%s/seqs" % out_path
     extract(in_path,nn_path,seq_path)
 
-in_path="../cc/florence"
+in_path="../florence"
 #make_sim_gen(in_path,3)
-#sim_exp(in_path,"../center")
+sim_exp(in_path,"../common",n_epochs=20)
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
-train(in_path,"sim_nn",n_epochs=5)
-extract(in_path,"sim_nn","seqs")
+#train(in_path,"sim_nn",n_epochs=5)
+#extract(in_path,"sim_nn","seqs")
