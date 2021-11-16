@@ -84,25 +84,17 @@ def train(in_path,out_path,n_epochs=5,n_frames=3,n_batch=32):
     model.fit(sim_gen,epochs=n_epochs)
     if(out_path):
         extractor.save(out_path)
-#    def read(in_path):
-#        paths=read_paths(in_path,["1","2","3"])
-#        print(paths)
-#        data_dict=data.actions.from_paths(paths)
-#        data_dict.add_dim()
-#        return data_dict
-#    train_sim=learn.SimTrain(read,make_nn,n_batch=n_batch)
-#    train_sim(in_path,out_path,n_epochs)
 
 def extract(in_path,nn_path,out_path):
-    read=data.imgs.ReadFrames()
+    read=data.imgs.ReadFrames(color="color")
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"hidden")
     def helper(frames):
         print(len(frames))
         frames=np.array(frames)
-        frames=np.expand_dims(frames,-1)
+#        frames=np.expand_dims(frames,-1)
         feat_i=extractor.predict(frames)
-        return feat_i
+        return feat_i        
     feat_seq=data.seqs.transform_seqs(in_path,read,helper)
     feat_seq.save(out_path)
 
@@ -118,17 +110,6 @@ def get_frames(in_path,out_path,fun=None):
         fun=center_frame
     data.actions.get_actions_eff(in_path,fun,out_path,dims=None)
 
-#def read_paths(in_path,persons):
-#    persons=set(persons)
-#    paths=[] 
-#    for path_i in files.top_files(in_path):
-#        name_i=files.Name(path_i.split("/")[-1]).clean()
-#        if( (name_i.get_person() %2)==1):
-#            person_i= name_i.split("_")[2]
-#            if(person_i in persons):
-#                paths.append(path_i)
-#    return paths
-
 def sim_exp(in_path,out_path):
     files.make_dir(out_path)
     frame_path="%s/frames" % out_path
@@ -142,5 +123,5 @@ in_path="../cc/florence"
 #sim_exp(in_path,"../center")
 #median(in_path,"../median")
 #print(len( read_paths("../median")) )
-train(in_path,"sim_nn",n_epochs=5)
-#extract(in_path,nn_path,out_path)
+#train(in_path,"sim_nn",n_epochs=5)
+extract(in_path,"sim_nn","seqs")
