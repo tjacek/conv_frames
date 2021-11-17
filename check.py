@@ -45,9 +45,17 @@ def empty_dirs(in_path):
 def check_agum(in_path,out_path):
     import gen
     def helper(name_i,frames):
-        return gen.flip(frames)
+        return gen.reverse(frames)
     data.imgs.transform_lazy(in_path,out_path,
         helper,recreate=True)
 
+def check_sample(in_path,out_path):
+    sample=data.imgs.MinLength(30)#data.imgs.StaticDownsample(30)
+    def helper(name_i,frames):
+        return sample(frames)
+    data.imgs.transform_lazy(in_path,out_path,
+        helper,recreate=True)    
+
 in_path="../cc/florence"
-check_agum(in_path,"../cc/agum")
+#check_agum(in_path,"../cc/agum2")
+check_sample(in_path,"static")
