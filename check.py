@@ -50,7 +50,8 @@ def check_agum(in_path,out_path):
         helper,recreate=True)
 
 def check_sample(in_path,out_path):
-    sample=data.imgs.MinLength(30)#data.imgs.StaticDownsample(30)
+#    sample=data.imgs.MinLength(30)
+    sample=data.imgs.StaticDownsample(30)
     def helper(name_i,frames):
         return sample(frames)
     data.imgs.transform_lazy(in_path,out_path,
@@ -58,4 +59,4 @@ def check_sample(in_path,out_path):
 
 in_path="../cc/florence"
 #check_agum(in_path,"../cc/agum2")
-check_sample(in_path,"static")
+check_sample(in_path,"static2")

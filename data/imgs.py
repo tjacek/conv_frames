@@ -108,8 +108,12 @@ class StaticDownsample(object):
         self.size=size 
 
     def __call__(self,frames):
-        scale= math.floor(len(frames)/self.size)
-        return [frames[scale*i] for i in range(self.size)]
+        scale=(len(frames)/self.size)
+        indexes=[math.floor(scale*i) 
+            for i in range(self.size)]
+        return [frames[i] for i in indexes]
+#        scale= math.floor(len(frames)/self.size)
+#        return [frames[scale*i] for i in range(self.size)]
 
 def read_frame_seqs(in_path,read=None):
     if(read is None):
