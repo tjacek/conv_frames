@@ -5,30 +5,66 @@ from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
 class AgumDecorator(Sequence):
-    def __init__(self,generator,agum=None):
-        if(agum is None):
-            agum=flip
+    def __init__(self,generator,agum):
         self.generator=generator
         self.agum=agum
 
     def __len__(self):
-        return 2*len(self.generator)
+        return len(self.agum)*len(self.generator)
 
     def on_epoch_end(self):
         self.generator.on_epoch_end()
 
     def __getitem__(self, index):
-        if(index> (len(self.generator )+1)):
-            index-=len(self.generator)
-            X,y=self.generator[index]
-            X=np.array([self.agum(seq_i) for seq_i in X])
-            return X,y
-        else:
-            return self.generator[index]
+        agum_index=index % len(self.agum)
+        batch_index= int(index / len(self.agum))
+        X,y=self.generator[batch_index]
+        agum_k=self.agum[agum_index]
+        X_agum=self.apply_agum(X,agum_k)
+        return X_agum,y
+
+    def apply_agum(self,X,agum_i):
+        if(type(agum_i)!=list):
+            return agum_i(X)
+        for fun_j in agum_i:
+            X=fun_j(X)
+        return X
+
+def add_agum(generator):
+    agum=[[],flip,reverse,[flip,reverse]]
+    return AgumDecorator(generator,agum)    
+
+#class AgumDecorator(Sequence):
+#    def __init__(self,generator,agum=None):
+#        if(agum is None):
+#            agum=flip
+#        self.generator=generator
+#        self.agum=agum
+
+#    def __len__(self):
+#        return 2*len(self.generator)
+
+#    def on_epoch_end(self):
+#        self.generator.on_epoch_end()
+
+#    def __getitem__(self, index):
+#        if(index> (len(self.generator )+1)):
+#            index-=len(self.generator)
+#            X,y=self.generator[index]
+#            X=np.array([self.agum(seq_i) for seq_i in X])
+#            return X,y
+#        else:
+#            return self.generator[index]
 
 def flip(frames):
     frames= [np.flip(frame_i,axis=1) 
                 for frame_i in frames]
+    return frames
+
+def reverse(frames):
+    frames=np.array(frames)
+    frames= np.flip(frames,axis=0)
+#    frames.reverse()
     return frames
 
 class BatchGenerator(object):

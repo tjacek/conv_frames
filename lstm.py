@@ -127,7 +127,7 @@ def single_exp(in_path,out_path,n_epochs=20):
     batch_gen=gen.make_batch_gen(in_path,n_frames,n_batch,read="color")
     generator=gen.AllGenerator(batch_gen,n_cats=params["n_cats"])
 
-    generator=gen.AgumDecorator(generator)
+    generator=gen.add_agum(generator)
 
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
@@ -135,8 +135,8 @@ def single_exp(in_path,out_path,n_epochs=20):
     train(generator,nn_path,params,n_epochs)
     extract(in_path,nn_path,feat_path)
 
-in_path="../florence"
-out_path="../agum4"
+in_path="../cc/florence"
+out_path="../agum"
 
-#single_exp(in_path,out_path,n_epochs=120)
-ens(in_path,"../ens",n_cats=9,n_epochs=25)
+single_exp(in_path,out_path,n_epochs=20)
+#ens(in_path,"../ens",n_cats=9,n_epochs=25)
