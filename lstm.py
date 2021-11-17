@@ -107,18 +107,36 @@ def extract(in_path,nn_path,out_path,size=30):
         frames=subsample(frames)
         frames=np.array(frames)
         return frames
-    def helper(in_path):
-        print(in_path)
-        seq_i=get_seq(in_path)
-        all_feats=[]
+    def helper(seq_i):    
         frames=np.expand_dims(seq_i,0)
-        all_feats.append( extractor.predict(frames))
-        frames=gen.flip(seq_i)
-        frames=np.expand_dims(frames,0)
-        all_feats.append( extractor.predict(frames))
-        return all_feats
-    feat_seq=data.feats.get_feats(in_path,helper)
+        return extractor.predict(frames)
+    agum=[[],gen.flip,gen.reverse,[gen.flip,gen.reverse]]
+    agum_extr=gen.AgumExtractor(get_seq,helper,agum)
+    feat_seq=data.feats.get_feats(in_path,agum_extr)
     feat_seq.save(out_path)
+
+#def extract(in_path,nn_path,out_path,size=30):
+#    read=data.imgs.ReadFrames(color="color")
+#    subsample=data.imgs.MinLength(size)# StaticDownsample(size)
+#    model=learn.base_read_model(None,nn_path)
+#    extractor=learn.get_extractor(model,"global_avg")
+#    def get_seq(in_path):
+#        frames=read(in_path)
+#        frames=subsample(frames)
+#        frames=np.array(frames)
+#        return frames
+#    def helper(in_path):
+#        print(in_path)
+#        seq_i=get_seq(in_path)
+#        all_feats=[]
+#        frames=np.expand_dims(seq_i,0)
+#        all_feats.append( extractor.predict(frames))
+#        frames=gen.flip(seq_i)
+#        frames=np.expand_dims(frames,0)
+#        all_feats.append( extractor.predict(frames))
+#        return all_feats
+#    feat_seq=data.feats.get_feats(in_path,helper)
+#    feat_seq.save(out_path)
 
 def single_exp(in_path,out_path,n_epochs=20):
     params={'seq_len':30,
@@ -132,7 +150,7 @@ def single_exp(in_path,out_path,n_epochs=20):
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
     feat_path="%s/feats" % out_path
-    train(generator,nn_path,params,n_epochs)
+#    train(generator,nn_path,params,n_epochs)
     extract(in_path,nn_path,feat_path)
 
 in_path="../cc/florence"

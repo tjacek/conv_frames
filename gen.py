@@ -23,16 +23,38 @@ class AgumDecorator(Sequence):
         X_agum=self.apply_agum(X,agum_k)
         return X_agum,y
 
-    def apply_agum(self,X,agum_i):
-        if(type(agum_i)!=list):
-            return agum_i(X)
-        for fun_j in agum_i:
-            X=fun_j(X)
-        return X
+def apply_agum(X,agum_i):
+    if(type(agum_i)!=list):
+        return agum_i(X)
+    for fun_j in agum_i:
+        X=fun_j(X)
+    return X
 
 def add_agum(generator):
     agum=[[],flip,reverse,[flip,reverse]]
     return AgumDecorator(generator,agum)    
+
+class AgumExtractor(object):
+    def __init__(self,preproc,extract,agum,selector=None):
+        if(selector is None):
+            selector=files.person_selector
+        self.preproc=preproc
+        self.extract=extract
+        self.agum=agum
+        self.selector=selector
+
+    def __call__(self,in_path):
+        print(in_path)
+        seq_i=self.preproc(in_path)
+        name_i=files.get_name(in_path)
+        if(self.selector(name_i)):
+            all_agum=[]
+            for agum_j in self.agum:
+                agum_seq=apply_agum(seq_i,agum_j)
+                all_agum.append(self.extract(agum_seq))
+            return all_agum
+        else:
+            return self.extract(seq_i)
 
 #class AgumDecorator(Sequence):
 #    def __init__(self,generator,agum=None):
@@ -91,7 +113,7 @@ class BatchGenerator(object):
         X_i=self.X[index*self.n_batch:(index+1)*self.n_batch]
         if(len(X_i.shape)<5):
             X_i=np.expand_dims(X_i,axis=-1)
-        print("\n %d %d \n" % (index,raw_index))
+#        print("\n %d %d \n" % (index,raw_index))
         return X_i,y_i
 
 class BinaryGenerator(Sequence):
