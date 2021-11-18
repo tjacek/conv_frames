@@ -73,13 +73,20 @@ def make_dir(path):
 #    binary="%s/%s" % (dir_path,binary_path)
 #    common=["%s/%s" % (dir_path,path_i) for path_i in common_path]
 #    return {"common":common ,"binary":binary}
+class PathDict(dict):
+    def __init__(self, arg=[]):
+        super(PathDict, self).__init__(arg)
+
+    def split(self,selector=None):
+        train,test=split(self,selector)
+        return PathDict(train),PathDict(test)    
 
 def get_path_dict(in_path):
     paths={}
     for path_i in top_files(in_path):
         name_i=get_name(path_i)
         paths[name_i]=top_files(path_i)
-    return paths
+    return PathDict(paths)
 
 def find_dirs(in_path,pred=None):
     if(pred is None):

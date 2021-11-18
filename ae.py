@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Input, Dense,Conv2D,Reshape,Conv2DTranspose
 from tensorflow.keras.layers import Flatten,MaxPooling2D,UpSampling2D
 from keras import regularizers
 from tensorflow.keras.models import load_model
-import tc_nn
+#import tc_nn
 import os.path
 import data.imgs,data.seqs,learn,files
 
@@ -44,22 +44,39 @@ class Autoencoder(object):
         autoencoder.summary()
         return autoencoder,recon
 
-def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
-    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-    seq_dict=read(in_path)
-    train=seq_dict.split()[0]
-    X,params=to_dataset(train,8)
-    model=get_train(params,out_path)
-    model.fit(X,X,epochs=n_epochs,batch_size=n_batch)
-    model.save(out_path)
+class FrameGenerator(object):
+    def __init__(self,frame_paths,n_batch):
+        self.frame_paths=frame_paths
+        self.n_batch=n_batch
 
-def get_train(params,out_path):
+    def __len__(self):
+        return int(len(self.frame_paths)/self.n_batch)
+
+def make_frame_gen(in_path,n_batch=8):
+    path_dict=files.get_path_dict(in_path)
+    path_dict=path_dict.split()[0]
+    frame_paths=[]
+    for frame_i in path_dict.values():
+        frame_paths+=frame_i
+        print(len(frame_i))
+    print(len(path_dict))
+    return FrameGenerator(frame_paths,n_batch)
+
+def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
+#    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
+#    seq_dict=read(in_path)
+#    train=seq_dict.split()[0]
+#    X,params=to_dataset(train,8)
+#    model=get_train(params,out_path)
+    ae_gen=make_frame_gen(in_path,n_batch)
+    raise Exception(len(ae_gen))
     if(os.path.isfile(out_path)):
         model=load_model(out_path)
     else:    
         make_ae=Autoencoder()
         model=make_ae(params)[0]
-    return model
+    model.fit(gen,epochs=n_epochs)#,batch_size=n_batch)
+    model.save(out_path)
 
 def extract_ae(in_path,nn_path,out_path):
     read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
@@ -76,21 +93,21 @@ def reconstruct(in_path,nn_path,out_path):
     frame_dict=frame_dict.transform(helper,new=True,single=False)
     frame_dict.save(out_path)
 
-def to_dataset(train,fraction=2):
-    X=[]
-    for seq_i in train.values():
-        X+=seq_i    
-    if(fraction):
-        X=[x_j for j,x_j in enumerate( X)
-              if( (j%fraction)==0)]
-    X=np.array(X)
-    params={ 'n_channels':1,"dims":train.dims()}
-    return X,params
+#def to_dataset(train,fraction=2):
+#    X=[]
+#    for seq_i in train.values():
+#        X+=seq_i    
+#    if(fraction):
+#        X=[x_j for j,x_j in enumerate( X)
+#              if( (j%fraction)==0)]
+#    X=np.array(X)
+#    params={ 'n_channels':1,"dims":train.dims()}
+#    return X,params
 
-def test_read(in_path,out_path):
-    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-    seq_dict=read(in_path)
-    seq_dict.save(out_path)
+#def test_read(in_path,out_path):
+#    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
+#    seq_dict=read(in_path)
+#    seq_dict.save(out_path)
 
 def ae_exp(frame_path,out_path,n_epochs=2):
     files.make_dir(out_path)
@@ -99,7 +116,7 @@ def ae_exp(frame_path,out_path,n_epochs=2):
 #    train_ae(frame_path,model_path,n_epochs=n_epochs)
     extract_ae(frame_path,model_path,seq_path)
 
-frame_path="../best2/frames"
-out_path="../best2/3_layers"
-ae_exp(frame_path,out_path,n_epochs=5)
+frame_path="../cc/florence"
+train_ae(frame_path,"ae")
+#ae_exp(frame_path,"ae",n_epochs=5)
 #reconstruct(frame_path,"%s/ae" % out_path,"recon")
