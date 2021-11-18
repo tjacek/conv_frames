@@ -20,7 +20,7 @@ class AgumDecorator(Sequence):
         batch_index= int(index / len(self.agum))
         X,y=self.generator[batch_index]
         agum_k=self.agum[agum_index]
-        X_agum=self.apply_agum(X,agum_k)
+        X_agum=apply_agum(X,agum_k)
         return X_agum,y
 
 def apply_agum(X,agum_i):
@@ -30,8 +30,8 @@ def apply_agum(X,agum_i):
         X=fun_j(X)
     return X
 
-def add_agum(generator):
-    agum=[[],flip,reverse,[flip,reverse]]
+def add_agum(generator,agum):
+#    agum=[[],flip,reverse,[flip,reverse]]
     return AgumDecorator(generator,agum)    
 
 class AgumExtractor(object):
@@ -55,28 +55,6 @@ class AgumExtractor(object):
             return all_agum
         else:
             return self.extract(seq_i)
-
-#class AgumDecorator(Sequence):
-#    def __init__(self,generator,agum=None):
-#        if(agum is None):
-#            agum=flip
-#        self.generator=generator
-#        self.agum=agum
-
-#    def __len__(self):
-#        return 2*len(self.generator)
-
-#    def on_epoch_end(self):
-#        self.generator.on_epoch_end()
-
-#    def __getitem__(self, index):
-#        if(index> (len(self.generator )+1)):
-#            index-=len(self.generator)
-#            X,y=self.generator[index]
-#            X=np.array([self.agum(seq_i) for seq_i in X])
-#            return X,y
-#        else:
-#            return self.generator[index]
 
 def flip(frames):
     frames= [np.flip(frame_i,axis=1) 
@@ -113,7 +91,6 @@ class BatchGenerator(object):
         X_i=self.X[index*self.n_batch:(index+1)*self.n_batch]
         if(len(X_i.shape)<5):
             X_i=np.expand_dims(X_i,axis=-1)
-#        print("\n %d %d \n" % (index,raw_index))
         return X_i,y_i
 
 class BinaryGenerator(Sequence):
@@ -169,12 +146,15 @@ class AllGenerator(Sequence):
         return self.batch_gen[index]
 
 class LazySampler(object):
-    def __init__(self,all_paths,read=None,size=30):
+    def __init__(self,all_paths,read=None,subsample=None):#size=30):
         if(read is None):
-            read=data.imgs.ReadFrames()	
+            read=data.imgs.ReadFrames()
+        if(type(subsample)==int):
+            subsample=data.imgs.MinLength(subsample)   
         self.all_paths=all_paths
         self.read=read
-        self.subsample=data.imgs.StaticDownsample(size)#MinLength(size)
+#        self.subsample=data.imgs.StaticDownsample(size)
+        self.subsample=subsample #data.imgs.MinLength(size)
 
     def __len__(self):
         return len(self.all_paths)	
@@ -216,17 +196,17 @@ class LazySampler(object):
                 paths.append(path_j)
         return paths
 
-def make_batch_gen(in_path,n_frames,n_batch,read="color"):
-    sampler=make_lazy_sampler(in_path,read)
+def make_batch_gen(in_path,n_frames,n_batch,read="color",subsample=None):
+    sampler=make_lazy_sampler(in_path,read,subsample)
     return BatchGenerator(sampler,n_frames,n_batch)
 
-def make_lazy_sampler(in_path,read):
+def make_lazy_sampler(in_path,read,subsample):
     all_paths=files.top_files(in_path)
     all_paths=[ path_i for path_i in all_paths
                     if(is_train(path_i))]
     if(type(read)==str):
         read=data.imgs.ReadFrames(color=read)
-    return LazySampler(all_paths,read=read)
+    return LazySampler(all_paths,read=read,subsample=subsample)
 
 def get_cat(path_i):
     return files.get_name(path_i).get_cat()

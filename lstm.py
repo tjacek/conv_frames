@@ -18,7 +18,7 @@ import os.path
 import gen,deep,data.feats,learn,files
 
 class FRAME_LSTM(object):
-    def __init__(self,dropout=None,activ='relu',batch=False,l1=None,optim_alg=None):
+    def __init__(self,dropout=0.5,activ='relu',batch=False,l1=0.001,optim_alg=None):
         if(optim_alg is None):
             optim_alg=tensorflow.keras.optimizers.Adam(learning_rate=0.00001)
         self.dropout=dropout
@@ -33,13 +33,14 @@ class FRAME_LSTM(object):
         n_kern,kern_size,pool_size=[96,64,64],[(5,5),(5,5),(5,5)],[(2,2),(2,2),(2,2)]
         lstm_cnn(model,n_kern,kern_size,pool_size,self.activ,input_shape)
         model.add(TimeDistributed(Flatten()))
-        model.add(TimeDistributed(Dense(256)))
+        n_hidden= [256,128,64] #[384,192,96]
+        model.add(TimeDistributed(Dense(n_hidden[0])))
         if( not (self.dropout is None)):
             model.add(TimeDistributed(Dropout(self.dropout)))	
         reg=None if(self.l1  is None) else regularizers.l1(self.l1)
-        model.add(TimeDistributed(Dense(128, name="first_dense",kernel_regularizer=reg)))
-
-        model.add(LSTM(64, return_sequences=True, name="lstm_layer"));
+        model.add(TimeDistributed(Dense(n_hidden[1], name="first_dense",kernel_regularizer=reg)))
+        
+        model.add(LSTM(n_hidden[2], return_sequences=True, name="lstm_layer"));
 		
         if(self.batch):
             model.add(GlobalAveragePooling1D(name="prebatch"))
@@ -69,18 +70,22 @@ def ens(in_path,out_path,n_cats=12,n_epochs=25):
     files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
+    agum=[[],gen.flip]
     read=data.imgs.ReadFrames(color="color")
-    sampler=gen.make_lazy_sampler(in_path,read=read)
-    params={'seq_len':30,
-            'dims':(128,64,3),"n_cats":2}
-    batch_gen=gen.BatchGenerator(sampler,n_frames=None,n_batch=8)
-    for i in range(1,n_cats):
+    subsample=data.imgs.MinLength(30)
+#    subsample=data.imgs.StaticDownsample(30)
+    params={'seq_len':30,'dims':(128,64,3),"n_cats":2,
+            "read":read,"agum":agum,"subsample":subsample}
+    n_frames,n_batch=None,8
+    batch_gen=gen.make_batch_gen(in_path,
+        n_frames,n_batch,read=params["read"],subsample=params["subsample"])
+    for i in range(n_cats):
         gen_i=gen.BinaryGenerator(i,batch_gen)
-        gen_i=gen.AgumDecorator(gen_i)
+        gen_i=gen.add_agum(gen_i,params["agum"])
         nn_i="%s/nn/%d" % (out_path,i)
         train(gen_i,nn_i,params,n_epochs=n_epochs)
         feat_i="%s/feats/%d" % (out_path,i)
-        extract(in_path,nn_i,feat_i,size=30)
+        extract(in_path,nn_i,feat_i,params)#size=30)
 
 def train(generator,nn_path,params,n_epochs=20):
     if(type(generator)==str):
@@ -97,11 +102,12 @@ def train(generator,nn_path,params,n_epochs=20):
     model.fit(generator,epochs=n_epochs)
     model.save(nn_path)
 
-def extract(in_path,nn_path,out_path,size=30):
-    read=data.imgs.ReadFrames(color="color")
-    subsample=data.imgs.MinLength(size)# StaticDownsample(size)
+def extract(in_path,nn_path,out_path,params):#size=30):
+#    read=data.imgs.ReadFrames(color="color")
+#    subsample=data.imgs.MinLength(size)# StaticDownsample(size)
     model=learn.base_read_model(None,nn_path)
     extractor=learn.get_extractor(model,"global_avg")
+    read,subsample,agum=params["read"],params["subsample"],params["agum"]
     def get_seq(in_path):
         frames=read(in_path)
         frames=subsample(frames)
@@ -110,51 +116,33 @@ def extract(in_path,nn_path,out_path,size=30):
     def helper(seq_i):    
         frames=np.expand_dims(seq_i,0)
         return extractor.predict(frames)
-    agum=[[],gen.flip,gen.reverse,[gen.flip,gen.reverse]]
+#    agum=[[]]#,gen.flip]#,gen.reverse,[gen.flip,gen.reverse]]
     agum_extr=gen.AgumExtractor(get_seq,helper,agum)
     feat_seq=data.feats.get_feats(in_path,agum_extr)
     feat_seq.save(out_path)
 
-#def extract(in_path,nn_path,out_path,size=30):
-#    read=data.imgs.ReadFrames(color="color")
-#    subsample=data.imgs.MinLength(size)# StaticDownsample(size)
-#    model=learn.base_read_model(None,nn_path)
-#    extractor=learn.get_extractor(model,"global_avg")
-#    def get_seq(in_path):
-#        frames=read(in_path)
-#        frames=subsample(frames)
-#        frames=np.array(frames)
-#        return frames
-#    def helper(in_path):
-#        print(in_path)
-#        seq_i=get_seq(in_path)
-#        all_feats=[]
-#        frames=np.expand_dims(seq_i,0)
-#        all_feats.append( extractor.predict(frames))
-#        frames=gen.flip(seq_i)
-#        frames=np.expand_dims(frames,0)
-#        all_feats.append( extractor.predict(frames))
-#        return all_feats
-#    feat_seq=data.feats.get_feats(in_path,helper)
-#    feat_seq.save(out_path)
-
 def single_exp(in_path,out_path,n_epochs=20):
-    params={'seq_len':30,
-            'dims':(128,64,3),"n_cats":9}
+    agum=[[],gen.flip]
+    read=data.imgs.ReadFrames(color="color")
+    subsample=data.imgs.MinLength(30)
+#    subsample=data.imgs.StaticDownsample(30)
+    params={'seq_len':30,'dims':(128,64,3),"n_cats":9,
+            "read":read,"agum":agum,"subsample":subsample}
     n_frames,n_batch=None,8
-    batch_gen=gen.make_batch_gen(in_path,n_frames,n_batch,read="color")
+    batch_gen=gen.make_batch_gen(in_path,
+        n_frames,n_batch,read=params["read"],subsample=params["subsample"])
     generator=gen.AllGenerator(batch_gen,n_cats=params["n_cats"])
 
-    generator=gen.add_agum(generator)
+    generator=gen.add_agum(generator,params["agum"])
 
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
     feat_path="%s/feats" % out_path
-#    train(generator,nn_path,params,n_epochs)
-    extract(in_path,nn_path,feat_path)
+    train(generator,nn_path,params,n_epochs)
+    extract(in_path,nn_path,feat_path,params)
 
-in_path="../cc/florence"
-out_path="../agum"
+in_path="../florence"
+out_path="../agum4"
 
-single_exp(in_path,out_path,n_epochs=20)
-#ens(in_path,"../ens",n_cats=9,n_epochs=25)
+#single_exp(in_path,out_path,n_epochs=10)
+ens(in_path,"../ens_agum_reg",n_cats=9,n_epochs=50)
