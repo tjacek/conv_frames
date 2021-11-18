@@ -8,8 +8,9 @@ from tensorflow.keras.layers import Flatten,MaxPooling2D,UpSampling2D
 from keras import regularizers
 from tensorflow.keras.models import load_model
 #import tc_nn
+from tensorflow.keras.utils import Sequence
 import os.path
-import data.imgs,data.seqs,learn,files
+import data.imgs,files#data.seqs,learn,files
 
 class Autoencoder(object):
     def __init__(self,n_hidden=128):
@@ -44,23 +45,27 @@ class Autoencoder(object):
         autoencoder.summary()
         return autoencoder,recon
 
-class FrameGenerator(object):
-    def __init__(self,frame_paths,n_batch):
+class FrameGenerator(Sequence):
+    def __init__(self,frame_paths,batch_size,read):
         self.frame_paths=frame_paths
-        self.n_batch=n_batch
+        self.batch_size=batch_size
+        self.read=read
 
     def __len__(self):
-        return int(len(self.frame_paths)/self.n_batch)
+        return int(len(self.frame_paths)/self.batch_size)
 
-def make_frame_gen(in_path,n_batch=8):
+    def __getitem__(self, i):
+        paths_i=self.frame_paths[i*self.batch_size:(i+1)*self.batch_size]
+        x_i=np.array([self.read(path_j) for path_j in paths_i])
+        return x_i,x_i
+
+def make_frame_gen(in_path,batch_size=8,read=None):
     path_dict=files.get_path_dict(in_path)
     path_dict=path_dict.split()[0]
     frame_paths=[]
     for frame_i in path_dict.values():
         frame_paths+=frame_i
-        print(len(frame_i))
-    print(len(path_dict))
-    return FrameGenerator(frame_paths,n_batch)
+    return FrameGenerator(frame_paths,batch_size,read)
 
 def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
 #    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
@@ -68,14 +73,15 @@ def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
 #    train=seq_dict.split()[0]
 #    X,params=to_dataset(train,8)
 #    model=get_train(params,out_path)
-    ae_gen=make_frame_gen(in_path,n_batch)
-    raise Exception(len(ae_gen))
+    params={ 'n_channels':3,"dims":(128,64)}
+    read=data.imgs.ReadFrames(color="color")
+    ae_gen=make_frame_gen(in_path,n_batch,read)
     if(os.path.isfile(out_path)):
         model=load_model(out_path)
     else:    
         make_ae=Autoencoder()
         model=make_ae(params)[0]
-    model.fit(gen,epochs=n_epochs)#,batch_size=n_batch)
+    model.fit(ae_gen,epochs=n_epochs)#,batch_size=n_batch)
     model.save(out_path)
 
 def extract_ae(in_path,nn_path,out_path):
