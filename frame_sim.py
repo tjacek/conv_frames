@@ -8,8 +8,8 @@ import data.actions,data.imgs,data.seqs
 import sim_core,deep,learn,files
 
 class SimGen(Sequence):
-    def __init__(self,path_dict,n_frames=3,batch_size=32):
-        self.sampler=FrameSampler(path_dict)
+    def __init__(self,sampler,n_frames=3,batch_size=32):
+        self.sampler=sampler
         self.n_frames=n_frames
         self.names=sim_core.all_pairs(list(path_dict.keys()))
         self.batch_size=batch_size
@@ -29,7 +29,6 @@ class SimGen(Sequence):
             y.append(sim_core.all_cat(name_a,name_b))
         X=np.array(X)
         X=[X[:,0],X[:,1]]
-#        y=to_categorical(y)
         return X,np.array(y)
 
 class FrameSampler(object):
@@ -51,7 +50,8 @@ class FrameSampler(object):
 def make_sim_gen(in_path,n_frames,n_batch=32):
     paths=files.get_path_dict(in_path)
     train= dict(files.split(paths)[0])
-    return SimGen(train,n_frames,n_batch)
+    sampler=FrameSampler(path_dict)
+    return SimGen(sampler,n_frames,n_batch)
 
 def uniform_dist(seq_j):
     return np.random.randint(len(seq_j),size=None)
@@ -122,10 +122,22 @@ def extract(in_path,nn_path,out_path):
 def median(frames):
     return np.median(frames,axis=0)
 
+def diff(name,frames):
+    import cv2
+    final=[]
+    for frame_i in frames:
+        frame_i=cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
+        frame_i=cv2.medianBlur(frame_i,5)
+        frame_i=cv2.Canny(frame_i , 100, 200)
+        final.append(frame_i)
+    action_img=np.mean(final,axis=0)
+    action_img[action_img!=0]=100
+    return action_img
+
 def get_frames(in_path,out_path,fun=None):
     if(fun is None):
-        fun=center_frame
-    data.actions.get_actions_eff(in_path,fun,out_path,dims=None)
+        fun=diff
+    data.actions.get_actions_lazy(in_path,out_path,fun,read=None)
 
 def sim_exp(in_path,out_path,n_epochs=20,n_batch=32):
     files.make_dir(out_path)
@@ -138,8 +150,5 @@ def sim_exp(in_path,out_path,n_epochs=20,n_batch=32):
 
 in_path="../cc/florence"
 #make_sim_gen(in_path,3)
-sim_exp(in_path,"../common",n_epochs=20)
-#median(in_path,"../median")
-#print(len( read_paths("../median")) )
-#train(in_path,"sim_nn",n_epochs=5)
-#extract(in_path,"sim_nn","seqs")
+#sim_exp(in_path,"../common",n_epochs=20)
+get_frames(in_path,"mean_img")
