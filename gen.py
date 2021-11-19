@@ -4,69 +4,6 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.utils import to_categorical
 import data.imgs,files
 
-class AgumDecorator(Sequence):
-    def __init__(self,generator,agum):
-        self.generator=generator
-        self.agum=agum
-
-    def __len__(self):
-        return len(self.agum)*len(self.generator)
-
-    def on_epoch_end(self):
-        self.generator.on_epoch_end()
-
-    def __getitem__(self, index):
-        agum_index=index % len(self.agum)
-        batch_index= int(index / len(self.agum))
-        X,y=self.generator[batch_index]
-        agum_k=self.agum[agum_index]
-        X_agum=apply_agum(X,agum_k)
-        return X_agum,y
-
-def apply_agum(X,agum_i):
-    if(type(agum_i)!=list):
-        return agum_i(X)
-    for fun_j in agum_i:
-        X=fun_j(X)
-    return X
-
-def add_agum(generator,agum):
-#    agum=[[],flip,reverse,[flip,reverse]]
-    return AgumDecorator(generator,agum)    
-
-class AgumExtractor(object):
-    def __init__(self,preproc,extract,agum,selector=None):
-        if(selector is None):
-            selector=files.person_selector
-        self.preproc=preproc
-        self.extract=extract
-        self.agum=agum
-        self.selector=selector
-
-    def __call__(self,in_path):
-        print(in_path)
-        seq_i=self.preproc(in_path)
-        name_i=files.get_name(in_path)
-        if(self.selector(name_i)):
-            all_agum=[]
-            for agum_j in self.agum:
-                agum_seq=apply_agum(seq_i,agum_j)
-                all_agum.append(self.extract(agum_seq))
-            return all_agum
-        else:
-            return self.extract(seq_i)
-
-def flip(frames):
-    frames= [np.flip(frame_i,axis=1) 
-                for frame_i in frames]
-    return frames
-
-def reverse(frames):
-    frames=np.array(frames)
-    frames= np.flip(frames,axis=0)
-#    frames.reverse()
-    return frames
-
 class BatchGenerator(object):
     def __init__(self,sampler,n_frames=100,n_batch=8):
         self.sampler=sampler
@@ -74,7 +11,7 @@ class BatchGenerator(object):
         self.n_batch=n_batch
         self.X=None
         self.y=None
-        self.i=0
+#        self.i=0
 
     def n_iters(self):
         return int(self.X.shape[0]/self.n_batch)
@@ -83,7 +20,7 @@ class BatchGenerator(object):
         print(X.shape)
         self.X=X
         self.y=y
-        self.i=0
+#        self.i=0
 
     def __getitem__(self, raw_index):
         index= raw_index %self.n_iters()
@@ -133,7 +70,6 @@ class AllGenerator(Sequence):
         return self.batch_gen.n_iters()
 
     def on_epoch_end(self):
-#        if(self.batch_gen.i==0):
         self.batch_gen.i=0
         sampler= self.batch_gen.sampler
         X,y=sampler.get_frames(self.batch_gen.n_frames)
@@ -142,18 +78,16 @@ class AllGenerator(Sequence):
         self.batch_gen.set(X,y)
 
     def __getitem__(self, index):
-#        raise Exception(len(self))
         return self.batch_gen[index]
 
 class LazySampler(object):
-    def __init__(self,all_paths,read=None,subsample=None):#size=30):
+    def __init__(self,all_paths,read=None,subsample=None):
         if(read is None):
             read=data.imgs.ReadFrames()
         if(type(subsample)==int):
             subsample=data.imgs.MinLength(subsample)   
         self.all_paths=all_paths
         self.read=read
-#        self.subsample=data.imgs.StaticDownsample(size)
         self.subsample=subsample #data.imgs.MinLength(size)
 
     def __len__(self):
