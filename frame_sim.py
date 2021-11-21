@@ -75,21 +75,29 @@ def median(frames):
     return np.median(frames,axis=0)
 
 def detect_edges(name,frames):
-    import cv2
     final=[]
     for frame_i in frames:
-        frame_i=cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
-        frame_i=cv2.medianBlur(frame_i,5)
-        frame_i=cv2.Canny(frame_i , 100, 200)
-        final.append(frame_i)
+        final.append(get_edges(name_i,frame_i))
     action_img=np.mean(final,axis=0)
     action_img[action_img!=0]=100
     return action_img
+
+def get_edges(name_i,frame_i):
+    import cv2    
+    frame_i=cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
+    frame_i=cv2.medianBlur(frame_i,5)
+    frame_i=cv2.Canny(frame_i , 100, 200)
+    return frame_i
 
 def get_frames(in_path,out_path,fun=None):
     if(fun is None):
         fun=detect_edges
     data.actions.get_actions_lazy(in_path,out_path,fun,read=None)
+
+def get_seqs(in_path,out_path,fun=None):
+    if(fun is None):
+        fun=get_edges    
+    data.imgs.transform_lazy(in_path,out_path,fun,single=True)
 
 def sim_exp(in_path,out_path,n_epochs=20,n_batch=32,action=False):
     files.make_dir(out_path)
@@ -110,5 +118,5 @@ def sim_exp(in_path,out_path,n_epochs=20,n_batch=32,action=False):
     extract_fun(in_path,nn_path,seq_path)
 
 in_path="../cc2/final"
-#get_frames(in_path,"../cc2/edges")
-sim_exp(in_path,"../common",n_epochs=10,action=False)
+get_seqs(in_path,"../cc2/final2")
+#sim_exp(in_path,"../common",n_epochs=10,action=False)
