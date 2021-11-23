@@ -79,7 +79,11 @@ def ens(in_path,out_path,n_cats=12,n_epochs=25):
     n_frames,n_batch=None,8
     batch_gen=gen.make_batch_gen(in_path,
         n_frames,n_batch,read=params["read"],subsample=params["subsample"])
-    for i in range(1,n_cats):
+    if(type(n_cats)==int):
+        clfs=range(n_cats)
+    if(type(n_cats)==tuple):
+        clfs=range(*n_cats)
+    for i in clfs:
         gen_i=gen.BinaryGenerator(i,batch_gen)
         gen_i=agum.add_agum(gen_i,params["agum"])
         nn_i="%s/nn/%d" % (out_path,i)
