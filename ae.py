@@ -10,10 +10,10 @@ from tensorflow.keras.models import load_model
 #import tc_nn
 from tensorflow.keras.utils import Sequence
 import os.path
-import data.imgs,files#data.seqs,learn,files
+import data.imgs,files,learn#data.seqs,files
 
 class Autoencoder(object):
-    def __init__(self,n_hidden=128):
+    def __init__(self,n_hidden=256):
         self.n_hidden=n_hidden
         self.n_kerns=[64,64,64]
         self.scale=[(4,4),(2,2),(2,2)]
@@ -68,15 +68,10 @@ def make_frame_gen(in_path,batch_size=8,read=None):
     return FrameGenerator(frame_paths,batch_size,read)
 
 def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
-#    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-#    seq_dict=read(in_path)
-#    train=seq_dict.split()[0]
-#    X,params=to_dataset(train,8)
-#    model=get_train(params,out_path)
     params={ 'n_channels':3,"dims":(128,64)}
     read=data.imgs.ReadFrames(color="color")
     ae_gen=make_frame_gen(in_path,n_batch,read)
-    if(os.path.isfile(out_path)):
+    if(os.path.exists(out_path)):
         model=load_model(out_path)
     else:    
         make_ae=Autoencoder()
@@ -90,14 +85,14 @@ def extract_ae(in_path,nn_path,out_path):
     extract(in_path,nn_path,out_path)
 
 def reconstruct(in_path,nn_path,out_path):
-    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-    frame_dict=read(in_path)
-    model=learn.base_read_model(frame_dict,nn_path)
-    def helper(img_i):
-        img_i=np.array(img_i)#,axis=-1)
-        return model.predict(img_i)
-    frame_dict=frame_dict.transform(helper,new=True,single=False)
-    frame_dict.save(out_path)
+    read=data.imgs.ReadFrames(color="color")
+    model=tf.keras.models.load_model(nn_path)
+    def helper(name_i,frames):
+#        frames=read(in_path)
+        frames=np.array(frames)
+        return model.predict(frames)
+    data.imgs.transform_lazy(in_path,out_path,helper,read,
+            recreate=True,single=False)
 
 #def to_dataset(train,fraction=2):
 #    X=[]
@@ -115,14 +110,14 @@ def reconstruct(in_path,nn_path,out_path):
 #    seq_dict=read(in_path)
 #    seq_dict.save(out_path)
 
-def ae_exp(frame_path,out_path,n_epochs=2):
+def ae_exp(frame_path,out_path,n_epochs=5):
     files.make_dir(out_path)
     model_path="%s/ae" % out_path
     seq_path="%s/seqs" % out_path 
 #    train_ae(frame_path,model_path,n_epochs=n_epochs)
     extract_ae(frame_path,model_path,seq_path)
 
-frame_path="../cc/florence"
-train_ae(frame_path,"ae")
+frame_path="../cc2/final"
+#train_ae(frame_path,"../cc2/ae",n_epochs=35)
 #ae_exp(frame_path,"ae",n_epochs=5)
-#reconstruct(frame_path,"%s/ae" % out_path,"recon")
+reconstruct(frame_path,"../cc2/ae","../cc2/recon")
