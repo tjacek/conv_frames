@@ -3,7 +3,7 @@ sys.path.append("..")
 import numpy as np
 import cv2
 import data.imgs
-
+ 
 def kmeans(in_path,out_path,k=5):
     read=data.imgs.ReadFrames(color="color")
     def fun(name_i,img_i):
