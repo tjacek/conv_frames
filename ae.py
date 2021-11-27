@@ -45,7 +45,7 @@ class Autoencoder(object):
         autoencoder.summary()
         return autoencoder,recon
 
-class FrameGenerator(Sequence):
+class LazyGenerator(Sequence):
     def __init__(self,frame_paths,batch_size,read):
         self.frame_paths=frame_paths
         self.batch_size=batch_size
@@ -59,13 +59,35 @@ class FrameGenerator(Sequence):
         x_i=np.array([self.read(path_j) for path_j in paths_i])
         return x_i,x_i
 
-def make_frame_gen(in_path,batch_size=8,read=None):
+class FrameGenerator(Sequence):
+    def __init__(self,frames,batch_size):
+        self.frames=frames
+        self.batch_size=batch_size
+
+    def __len__(self):
+        return int(len(self.frames)/self.batch_size)
+
+    def __getitem__(self, i):
+        x_i=self.frames[i*self.batch_size:(i+1)*self.batch_size]
+        x_i=np.array(x_i)
+        return x_i,x_i
+
+def make_lazy_gen(in_path,batch_size=8,read=None):
     path_dict=files.get_path_dict(in_path)
     path_dict=path_dict.split()[0]
     frame_paths=[]
     for frame_i in path_dict.values():
         frame_paths+=frame_i
-    return FrameGenerator(frame_paths,batch_size,read)
+    return LazyGenerator(frame_paths,batch_size,read)
+
+def make_frame_gen(in_path,batch_size=8,read=None):
+    frame_seqs=data.imgs.read_frame_seqs(in_path,read)
+    frame_seqs=frame_seqs.split()[0]
+    X=[]
+    for name_i,seq_i in frame_seqs.items():
+        X+=seq_i
+#    raise Exception(len(X))
+    return FrameGenerator(X,batch_size)
 
 def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
     params={ 'n_channels':3,"dims":(128,64)}
@@ -76,7 +98,7 @@ def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
     else:    
         make_ae=Autoencoder()
         model=make_ae(params)[0]
-    model.fit(ae_gen,epochs=n_epochs)#,batch_size=n_batch)
+    model.fit(ae_gen,epochs=n_epochs)
     model.save(out_path)
 
 def extract_ae(in_path,nn_path,out_path):
@@ -84,31 +106,21 @@ def extract_ae(in_path,nn_path,out_path):
     extract=learn.ExtractSeqs(read)
     extract(in_path,nn_path,out_path)
 
-def reconstruct(in_path,nn_path,out_path):
+def reconstruct(in_path,nn_path,out_path,diff=False):
     read=data.imgs.ReadFrames(color="color")
     model=tf.keras.models.load_model(nn_path)
-    def helper(name_i,frames):
-#        frames=read(in_path)
-        frames=np.array(frames)
-        return model.predict(frames)
+    if(diff):
+        def helper(name_i,frames):
+            print(name_i)
+            new_frames=model.predict(np.array(frames))
+            return [ np.abs(frame_i-new_frame_i)
+                for frame_i,new_frame_i in zip(new_frames,frames)]
+    else:
+        def helper(name_i,frames):
+            frames=np.array(frames)
+            return model.predict(frames)
     data.imgs.transform_lazy(in_path,out_path,helper,read,
             recreate=True,single=False)
-
-#def to_dataset(train,fraction=2):
-#    X=[]
-#    for seq_i in train.values():
-#        X+=seq_i    
-#    if(fraction):
-#        X=[x_j for j,x_j in enumerate( X)
-#              if( (j%fraction)==0)]
-#    X=np.array(X)
-#    params={ 'n_channels':1,"dims":train.dims()}
-#    return X,params
-
-#def test_read(in_path,out_path):
-#    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-#    seq_dict=read(in_path)
-#    seq_dict.save(out_path)
 
 def ae_exp(frame_path,out_path,n_epochs=5):
     files.make_dir(out_path)
@@ -118,6 +130,6 @@ def ae_exp(frame_path,out_path,n_epochs=5):
     extract_ae(frame_path,model_path,seq_path)
 
 frame_path="../cc2/final"
-#train_ae(frame_path,"../cc2/ae",n_epochs=35)
+#train_ae(frame_path,"../cc2/ae",n_epochs=100)
 #ae_exp(frame_path,"ae",n_epochs=5)
-reconstruct(frame_path,"../cc2/ae","../cc2/recon")
+reconstruct(frame_path,"../cc2/ae","../cc2/recon",diff=False)
