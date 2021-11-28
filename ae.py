@@ -17,7 +17,8 @@ class Autoencoder(object):
         self.n_hidden=n_hidden
         self.n_kerns=[64,64,64]
         self.scale=[(4,4),(2,2),(2,2)]
-    
+        self.optim_alg=tf.keras.optimizers.Adam(learning_rate=0.00001)
+
     def __call__(self,params):
         x,y=params["dims"]
         n_layers=len(self.n_kerns)
@@ -40,7 +41,7 @@ class Autoencoder(object):
         recon=Model(input_img,encoded)
         autoencoder = Model(input_img, x)
 
-        autoencoder.compile(optimizer='adam',
+        autoencoder.compile(optimizer=self.optim_alg, #'adam',
                       loss='mean_squared_error')#CustomLoss(autoencoder)
         autoencoder.summary()
         return autoencoder,recon
@@ -130,6 +131,6 @@ def ae_exp(frame_path,out_path,n_epochs=5):
     extract_ae(frame_path,model_path,seq_path)
 
 frame_path="../cc2/final"
-#train_ae(frame_path,"../cc2/ae",n_epochs=100)
+train_ae(frame_path,"../cc2/ae",n_epochs=100)
 #ae_exp(frame_path,"ae",n_epochs=5)
-reconstruct(frame_path,"../cc2/ae","../cc2/recon",diff=False)
+#reconstruct(frame_path,"../cc2/ae","../cc2/recon",diff=False)
