@@ -5,6 +5,7 @@ import data.imgs,data.actions
 def diff(in_path,out_path):
     def fun(name_i,frames):
         print(name_i)
+        frames=to_grey(frames)
         size=len(frames)
         return [ np.abs(frames[i]-frames[i-1]) 
                     for i in range(1,size)]
@@ -34,6 +35,11 @@ def get_edges(name_i,frame_i):
     frame_i=cv2.medianBlur(frame_i,5)
     frame_i=cv2.Canny(frame_i , 100, 200)
     return frame_i
+
+def to_grey(frames):
+    return [cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
+                for frame_i in frames
+                    if(not (frame_i is None))]
 
 in_path="../cc2/segm2/frames"
 out_path="../cc2/segm2/diff"
