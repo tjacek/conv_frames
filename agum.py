@@ -62,6 +62,10 @@ def flip_img(img_i):
     raise Exception(img_i[0].shape)
     return np.flip(img_i,axis=1) 
 
+def flip_sim(img_i):
+    a,b=img_i
+    return [np.flip(a,axis=1),b]
+
 def reverse(frames):
     frames=np.array(frames)
     frames= np.flip(frames,axis=0)
