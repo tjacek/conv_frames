@@ -10,7 +10,7 @@ from tensorflow.keras.models import load_model
 #import tc_nn
 from tensorflow.keras.utils import Sequence
 import os.path
-import data.imgs,files,learn#data.seqs,files
+import data.imgs,files,learn,data.seqs
 
 class Autoencoder(object):
     def __init__(self,n_hidden=256):
@@ -103,9 +103,15 @@ def train_ae(in_path,out_path,n_batch=8,n_epochs=30):
     model.save(out_path)
 
 def extract_ae(in_path,nn_path,out_path):
-    read=tc_nn.SimpleRead(dim=(64,128),preproc=data.imgs.Downsample())
-    extract=learn.ExtractSeqs(read)
-    extract(in_path,nn_path,out_path)
+    read=data.imgs.ReadFrames(color="color")
+    model=tf.keras.models.load_model(nn_path)
+    extractor=learn.get_extractor(model,"hidden")
+    def fun(name_i,frames):
+        print(name_i)
+        frames=np.array(frames)
+        return extractor.predict(frames)
+    seqs_dict=data.seqs.transform_seqs(in_path,read,fun)
+    seqs_dict.save(out_path)
 
 def reconstruct(in_path,nn_path,out_path,diff=False):
     read=data.imgs.ReadFrames(color="color")
@@ -131,6 +137,7 @@ def ae_exp(frame_path,out_path,n_epochs=5):
     extract_ae(frame_path,model_path,seq_path)
 
 frame_path="../cc2/final"
-train_ae(frame_path,"../cc2/ae",n_epochs=100)
+#train_ae(frame_path,"../cc2/ae",n_epochs=30)
+extract_ae(frame_path,"../cc2/ae","../cc2/ae_seqs")
 #ae_exp(frame_path,"ae",n_epochs=5)
 #reconstruct(frame_path,"../cc2/ae","../cc2/recon",diff=False)
