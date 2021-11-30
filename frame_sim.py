@@ -52,7 +52,6 @@ def extract(in_path,nn_path,out_path):
     def helper(frames):
         print(len(frames))
         frames=np.array(frames)
-#        frames=np.expand_dims(frames,-1)
         feat_i=extractor.predict(frames)
         return feat_i        
     feat_seq=data.seqs.transform_seqs(in_path,read,helper)
@@ -71,16 +70,19 @@ def extract_actions(in_path,nn_path,out_path):
     feat_seq=data.feats.get_feats(in_path,agum_extr)
     feat_seq.save(out_path)
 
-def median(frames):
-    return np.median(frames,axis=0)
+#def median(frames):
+#    return np.median(frames,axis=0)
 
 def sim_exp(in_path,out_path,n_epochs=20,n_batch=32,action=False):
     files.make_dir(out_path)
     nn_path="%s/nn" % out_path
     gen_params={"in_path":in_path,"n_batch":n_batch}
-    if(action):
+    if(action=="action"):
         make_gen=sim_gen.make_action_gen
         extract_fun=extract_actions
+    elif(action=="disc"):
+        make_gen=sim_gen.make_disc_gen
+        extract_fun=extract        
     else:
         gen_params["n_frames"]=1
         make_gen=sim_gen.make_sim_gen
@@ -92,5 +94,5 @@ def sim_exp(in_path,out_path,n_epochs=20,n_batch=32,action=False):
     seq_path="%s/seqs" % out_path
     extract_fun(in_path,nn_path,seq_path)
 
-in_path="../cc2/segm2/frames"
-sim_exp(in_path,"../cc2/segm2",n_epochs=50,action=False)
+in_path="../ml_utils/disc"
+sim_exp(in_path,"../disc",n_epochs=20,action="disc")

@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from tensorflow.keras.utils import Sequence
 import sim_core,files,data.imgs
 
@@ -55,6 +56,21 @@ def make_sim_gen(in_path,n_frames,n_batch=32):
     train= paths.split()[0]#dict(files.split(paths)[0])
     sampler=FrameSampler(train)
     return SimGen(sampler,n_frames,n_batch)
+
+def make_disc_gen(in_path,n_batch=8):
+    paths=files.get_path_dict(in_path)
+    read=data.imgs.ReadFrames(color="color")
+    frame_dict={}
+    for name_i,frames_i in paths.items():
+        random.shuffle( frames_i)
+        paths_i=frames_i[:30]
+        for path_j in paths_i:
+            name_j=files.get_name(path_j)
+            frame_dict[name_j]=read(path_j)
+#    frame_dict={str(i):read(path_i) 
+#                    for i,path_i in enumerate(s_paths)}
+    return SimGen(frame_dict,1,n_batch)
+#    raise Exception(len(frame_dict))
 
 def uniform_dist(seq_j):
     return np.random.randint(len(seq_j),size=None)
