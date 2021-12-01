@@ -38,9 +38,15 @@ def get_edges(name_i,frame_i):
 
 def to_grey(frames):
     return [cv2.cvtColor(frame_i, cv2.COLOR_BGR2GRAY)
-                for frame_i in frames
-                    if(not (frame_i is None))]
+                    for frame_i in frames
+                        if(not (frame_i is None))]
 
-in_path="../cc2/segm2/frames"
-out_path="../cc2/segm2/diff"
-diff(in_path,out_path)
+def to_grey_transform(in_path,out_path):
+    def helper(name_i,frames):
+        print(name_i)
+        return to_grey(frames)
+    data.imgs.transform_lazy(in_path,out_path,helper,single=False)
+
+in_path="../cc2/final"
+out_path="../../2021_XII/final"
+to_grey_transform(in_path,out_path)
