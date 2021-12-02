@@ -129,15 +129,24 @@ def reconstruct(in_path,nn_path,out_path,diff=False):
     data.imgs.transform_lazy(in_path,out_path,helper,read,
             recreate=True,single=False)
 
-def ae_exp(frame_path,out_path,n_epochs=5):
-    files.make_dir(out_path)
-    model_path="%s/ae" % out_path
-    seq_path="%s/seqs" % out_path 
-#    train_ae(frame_path,model_path,n_epochs=n_epochs)
-    extract_ae(frame_path,model_path,seq_path)
+def get_path_dir(dir_path,frame_path=None):
+    path_dir={"dir":dir_path,
+              "nn":"%s/nn"%dir_path,
+              "seqs":"%s/seqs"%dir_path}
+    if(frame_path is None):
+        path_dir["frames"]="%s/frames"% frame_path
+    else:
+        path_dir["frames"]=frame_path
+    return path_dir
+
+def ae_exp(frame_path,paths,n_epochs=5):
+    if(type(paths)==str):
+        paths=get_path_dir(paths,frame_path)
+    files.make_dir(paths["dir"])
+    train_ae(paths["frames"],paths["nn"],n_epochs=n_epochs)
+    extract_ae(paths["frames"],paths["nn"],paths["seqs"])
 
 frame_path="../cc2/final"
-#train_ae(frame_path,"../cc2/ae",n_epochs=30)
-extract_ae(frame_path,"../cc2/ae","../cc2/ae_seqs")
-#ae_exp(frame_path,"ae",n_epochs=5)
+out_path="../cc2/ae"
+ae_exp(frame_path,out_path,n_epochs=5)
 #reconstruct(frame_path,"../cc2/ae","../cc2/recon",diff=False)
