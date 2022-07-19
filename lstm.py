@@ -59,22 +59,23 @@ def lstm_cnn(model,n_kern,kern_size,pool_size,activ,input_shape):
     for i,n_kern_i in enumerate(n_kern):
         if(i==0):
             conv_i=Conv2D(filters= n_kern_i,kernel_size=kern_size[i], padding='same')
-            model.add(TimeDistributed(conv_i,input_shape=input_shape))#(30, 128, 64, 3)))
+            model.add(TimeDistributed(conv_i,input_shape=input_shape))
         else:
             conv_i=Conv2D(n_kern_i,kern_size[i])
             model.add(TimeDistributed(conv_i))
         model.add(TimeDistributed(Activation(activ)))
         model.add(TimeDistributed(MaxPooling2D(pool_size=pool_size[i])))
 
-def ens(in_path,out_path,n_cats=12,n_epochs=25):
+def ens(in_path,out_path,n_cats=12,n_epochs=25,
+        modality='grey',dims=(96, 128,1)):
     files.make_dir(out_path)
     files.make_dir("%s/nn" % out_path)
     files.make_dir("%s/feats" % out_path)
     agum_fun=[[],agum.flip]
-    read=data.imgs.ReadFrames(color="color")
+    read=data.imgs.ReadFrames(color=modality)
     subsample=data.imgs.MinLength(30)
 #    subsample=data.imgs.StaticDownsample(30)
-    params={'seq_len':30,'dims':(128,64,3),"n_cats":2,
+    params={'seq_len':30,'dims':dims,"n_cats":2,
             "read":read,"agum":agum_fun,"subsample":subsample}
     n_frames,n_batch=None,8
     batch_gen=gen.make_batch_gen(in_path,
@@ -145,8 +146,8 @@ def single_exp(in_path,out_path,n_epochs=20):
     train(generator,nn_path,params,n_epochs)
     extract(in_path,nn_path,feat_path,params)
 
-in_path="../cc2/final"
-out_path="../agum4"
+in_path='../CZU/final'
+out_path="lstm"
 
 #single_exp(in_path,out_path,n_epochs=10)
-ens(in_path,"../cc2/ens",n_cats=9,n_epochs=30)
+ens(in_path,"lstm",n_cats=22,n_epochs=5)
